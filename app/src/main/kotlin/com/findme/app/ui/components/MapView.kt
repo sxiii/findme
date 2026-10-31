@@ -1,0 +1,88 @@
+package com.findme.app.ui.components
+
+import android.webkit.WebView
+import android.webkit.WebViewClient
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.viewinterop.AndroidView
+
+@Composable
+fun MapView(
+    latitude: Double,
+    longitude: Double,
+    isDarkMode: Boolean,
+    modifier: Modifier = Modifier
+) {
+    AndroidView(
+        modifier = modifier,
+        factory = { context ->
+            WebView(context).apply {
+                webViewClient = WebViewClient()
+                settings.javaScriptEnabled = true
+                settings.domStorageEnabled = true
+                settings.mixedContentMode = android.webkit.WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
+                
+                val htmlContent = generateMapHtml(latitude, longitude, isDarkMode)
+                loadData(htmlContent, "text/html", "utf-8")
+            }
+        }
+    )
+}
+
+private fun generateMapHtml(latitude: Double, longitude: Double, isDarkMode: Boolean): String {
+    val theme = if (isDarkMode) "dark" else "light"
+    val tileLayer = if (isDarkMode) {
+        "https://{s}.basemaps.cartocdn.com/dark/{z}/{x}/{y}{r}.png"
+    } else {
+        "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+    }
+    
+    val attribution = if (isDarkMode) {
+        "&copy; <a href='https://carto.com/'>CARTO</a>"
+    } else {
+        "Tiles &copy; Esri"
+    }
+
+    return """
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="utf-8" />
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+            <style>
+                body { margin: 0; padding: 0; }
+                #map { position: absolute; top: 0; bottom: 0; width: 100%; background-color: #1a1a1a; }
+                .leaflet-container { background-color: #1a1a1a; }
+            </style>
+        </head>
+        <body>
+            <div id="map"></div>
+            <script>
+                const map = L.map('map').setView([$latitude, $longitude], 14);
+                
+                L.tileLayer('$tileLayer', {
+                    attribution: '$attribution',
+                    maxZoom: 19,
+                    subdomains: 'abc'
+                }).addTo(map);
+                
+                L.marker([$latitude, $longitude])
+                    .addTo(map)
+                    .bindPopup('Location: $latitude, $longitude')
+                    .openPopup();
+                    
+                L.circleMarker([$latitude, $longitude], {
+                    radius: 100,
+                    fillColor: '#0066ff',
+                    color: '#0066ff',
+                    weight: 2,
+                    opacity: 0.3,
+                    fillOpacity: 0.1
+                }).addTo(map);
+            </script>
+        </body>
+        </html>
+    """.trimIndent()
+}

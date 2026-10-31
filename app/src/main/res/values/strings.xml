@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Find Me</string>
+    <string name="request_location">Request Location</string>
+    <string name="location_requested">Location Requested</string>
+    <string name="loading">Loading...</string>
+    <string name="error">Error</string>
+    <string name="retry">Retry</string>
+    <string name="place_info">Place Information</string>
+    <string name="address">Address</string>
+    <string name="description">Description</string>
+    <string name="coordinates">Coordinates</string>
+    <string name="map">Map</string>
+    <string name="dark_mode">Dark Mode</string>
+</resources>
