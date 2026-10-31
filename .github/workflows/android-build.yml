@@ -27,23 +27,23 @@ jobs:
           java-version: '17'
 
       - name: Set up Android SDK
-        uses: android-actions/setup-android@v4
+        uses: android-actions/setup-android@v3
         with:
-          packages: 'platforms;android-35 build-tools;35.0.0'
+          packages: 'platforms;android-35 build-tools;35.0.0 cmdline-tools;latest'
           accept-android-sdk-licenses: true
 
-      - name: Download Gradle Wrapper JAR
+      - name: Setup Gradle wrapper
         run: |
           mkdir -p gradle/wrapper
-          curl -L https://services.gradle.org/distributions/gradle-8.11.1-bin.zip -o gradle-8.11.1-bin.zip
-          unzip -p gradle-8.11.1-bin.zip gradle-8.11.1/lib/gradle-wrapper.jar > gradle/wrapper/gradle-wrapper.jar
-          rm gradle-8.11.1-bin.zip
+          curl -L https://services.gradle.org/distributions/gradle-8.11.1-all.zip -o /tmp/gradle-8.11.1-all.zip
+          unzip -j /tmp/gradle-8.11.1-all.zip gradle-8.11.1/lib/gradle-wrapper.jar -d gradle/wrapper/
+          rm /tmp/gradle-8.11.1-all.zip
 
       - name: Validate Gradle wrapper
-        uses: gradle/actions/wrapper-validation@v4
+        uses: gradle/actions/wrapper-validation@v3
 
       - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v3
 
       - name: Build debug APK
         run: |
