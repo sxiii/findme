@@ -1,6 +1,7 @@
 plugins {
-    id("com.android.application") version "8.5.0"
-    kotlin("android") version "2.0.10"
+    id("com.android.application") version "8.7.3"
+    kotlin("android") version "2.0.20"
+    id("org.gradle.wrapper") version "8.11.1"
 }
 
 android {
@@ -42,6 +43,7 @@ dependencies {
     implementation("androidx.appcompat:appcompat:1.7.0")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.7")
     implementation("androidx.activity:activity-compose:1.9.3")
+    implementation("androidx.datastore:datastore-preferences:1.1.1")
 
     // Compose
     val composeBom = platform("androidx.compose:compose-bom:2024.12.01")
@@ -50,6 +52,7 @@ dependencies {
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.material:material-icons-extended")
     implementation("androidx.compose.foundation:foundation")
+    implementation("androidx.compose.runtime:runtime")
 
     // Location Services
     implementation("com.google.android.gms:play-services-location:21.3.0")
@@ -64,7 +67,16 @@ dependencies {
     // WebView for Map
     implementation("androidx.webkit:webkit:1.12.1")
 
+    // Coroutines
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
+
     // Testing
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.2.1")
+}
+
+tasks.wrapper {
+    gradleVersion = "8.11.1"
+    distributionType = Wrapper.DistributionType.BIN
 }
