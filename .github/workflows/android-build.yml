@@ -2,6 +2,8 @@ name: Android Build
 
 on:
   workflow_dispatch:
+  push:
+    branches: [ main ]
 
 permissions:
   contents: read
@@ -29,26 +31,19 @@ jobs:
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
         with:
-          packages: 'platforms;android-35 build-tools;35.0.0 cmdline-tools;latest'
+          packages: |
+            platforms;android-35
+            build-tools;35.0.0
+            cmdline-tools;latest
           accept-android-sdk-licenses: true
 
-      - name: Download Gradle wrapper JAR
-        run: |
-          mkdir -p gradle/wrapper
-          curl -L https://services.gradle.org/distributions/gradle-8.11.1-all.zip -o /tmp/gradle.zip
-          unzip -j /tmp/gradle.zip '*/lib/gradle-wrapper.jar' -d gradle/wrapper/
-          rm /tmp/gradle.zip
-
-      - name: Validate Gradle wrapper
-        uses: gradle/actions/wrapper-validation@v3
-
-      - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v3
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: 8.11.1
 
       - name: Build debug APK
-        run: |
-          chmod +x ./gradlew
-          ./gradlew --no-daemon --stacktrace assembleDebug
+        run: ./gradlew assembleDebug --no-daemon --stacktrace --info
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
