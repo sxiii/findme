@@ -42,7 +42,22 @@ fun MapView(
                         ) {
                             super.onReceivedError(view, request, error)
                             if (request?.isForMainFrame == true) {
-                                errorMessage = "Web Error: ${error?.description}"
+                                errorMessage = "MainFrame Error: ${error?.description} (${error?.errorCode})"
+                            } else {
+                                errorMessage = "Resource Error: ${request?.url} -> ${error?.description}"
+                            }
+                        }
+
+                        override fun onReceivedHttpError(
+                            view: WebView?,
+                            request: WebResourceRequest?,
+                            errorResponse: android.webkit.WebResourceResponse?
+                        ) {
+                            super.onReceivedHttpError(view, request, errorResponse)
+                            val url = request?.url?.toString() ?: ""
+                            val status = errorResponse?.statusCode ?: 0
+                            if (status >= 400) {
+                                errorMessage = "HTTP $status loading $url"
                             }
                         }
                     }
@@ -51,8 +66,11 @@ fun MapView(
                             consoleMessage?.let {
                                 val msg = it.message()
                                 val line = it.lineNumber()
-                                if (it.messageLevel() == ConsoleMessage.MessageLevel.ERROR || msg.contains("Error", true) || msg.contains("JS_ERR", true)) {
-                                    errorMessage = "JS Error: $msg (line $line)"
+                                val level = it.messageLevel()
+                                if (level == ConsoleMessage.MessageLevel.ERROR || msg.contains("Error", true) || msg.contains("JS_ERR", true) || msg.contains("TileError", true)) {
+                                    errorMessage = "JS Error [L$line]: $msg"
+                                } else {
+                                    errorMessage = "JS Log [L$line]: $msg"
                                 }
                             }
                             return super.onConsoleMessage(consoleMessage)
@@ -143,15 +161,30 @@ private fun generateMapHtml(latitude: Double, longitude: Double, isDarkMode: Boo
             <div id="map"></div>
             <script>
                 window.onerror = function(msg, url, line, col, error) {
-                    console.error("JS_ERR: " + msg + " at line " + line + ":" + col);
+                    console.error("JS_ERR: " + msg + " at " + (url || "inline") + ":" + line + ":" + col);
                 };
+                window.addEventListener('unhandledrejection', function(event) {
+                    console.error("JS_REJECTION: " + event.reason);
+                });
                 try {
+                    if (typeof L === 'undefined') {
+                        throw new Error("Leaflet (L) is not loaded (CDN blocked or offline)");
+                    }
+                    var mapElem = document.getElementById('map');
+                    console.log("Map container size: " + mapElem.offsetWidth + "x" + mapElem.offsetHeight);
+
                     var map = L.map('map').setView([$latitude, $longitude], 14);
                     
-                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    var tileLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                         attribution: '&copy; OpenStreetMap contributors',
                         maxZoom: 19
-                    }).addTo(map);
+                    });
+
+                    tileLayer.on('tileerror', function(error) {
+                        console.error("TileError: " + JSON.stringify(error));
+                    });
+
+                    tileLayer.addTo(map);
                     
                     L.marker([$latitude, $longitude])
                         .addTo(map)
@@ -169,9 +202,10 @@ private fun generateMapHtml(latitude: Double, longitude: Double, isDarkMode: Boo
 
                     setTimeout(function() {
                         map.invalidateSize();
+                        console.log("Map size invalidated, final size: " + mapElem.offsetWidth + "x" + mapElem.offsetHeight);
                     }, 300);
                 } catch (e) {
-                    console.error("Leaflet Exception: " + e.message);
+                    console.error("Leaflet Exception: " + e.message + " (Stack: " + e.stack + ")");
                 }
             </script>
         </body>
