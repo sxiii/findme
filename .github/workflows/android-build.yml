@@ -31,10 +31,7 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
-          validate-wrappers: false
-
-      - name: Make gradlew executable
-        run: chmod +x ./gradlew
+          gradle-version: wrapper
 
       - name: Build debug APK
         run: ./gradlew assembleDebug --no-daemon --stacktrace
