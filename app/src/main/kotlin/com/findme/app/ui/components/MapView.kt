@@ -37,17 +37,9 @@ fun MapView(
 }
 
 private fun generateMapHtml(latitude: Double, longitude: Double, isDarkMode: Boolean): String {
-    val tileLayer = if (isDarkMode) {
-        "https://{s}.basemaps.cartocdn.com/dark/{z}/{x}/{y}{r}.png"
-    } else {
-        "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-    }
-    
-    val attribution = if (isDarkMode) {
-        "&copy; <a href='https://carto.com/'>CARTO</a>"
-    } else {
-        "Tiles &copy; Esri"
-    }
+    val tileLayer = "https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+    val attribution = "&copy; <a href='https://www.openstreetmap.org/copyright'>OpenStreetMap</a> contributors"
+    val bgColor = if (isDarkMode) "#1a1a1a" else "#ffffff"
 
     return """
         <!DOCTYPE html>
@@ -58,9 +50,9 @@ private fun generateMapHtml(latitude: Double, longitude: Double, isDarkMode: Boo
             <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
             <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
             <style>
-                html, body { margin: 0; padding: 0; height: 100%; width: 100%; background-color: #1a1a1a; }
-                #map { position: absolute; top: 0; bottom: 0; left: 0; right: 0; background-color: #1a1a1a; }
-                .leaflet-container { background-color: #1a1a1a; width: 100%; height: 100%; }
+                html, body { margin: 0; padding: 0; height: 100%; width: 100%; background-color: $bgColor; }
+                #map { position: absolute; top: 0; bottom: 0; left: 0; right: 0; background-color: $bgColor; }
+                .leaflet-container { background-color: $bgColor; width: 100%; height: 100%; }
             </style>
         </head>
         <body>
@@ -88,7 +80,7 @@ private fun generateMapHtml(latitude: Double, longitude: Double, isDarkMode: Boo
                     fillOpacity: 0.1
                 }).addTo(map);
 
-                // Fix for WebView sizing in Android Compose
+                // Ensure Leaflet recalculates size after AndroidView layout measurement
                 setTimeout(function() {
                     map.invalidateSize();
                 }, 300);
