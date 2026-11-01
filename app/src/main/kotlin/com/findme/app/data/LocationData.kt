@@ -39,3 +39,22 @@ data class PlaceInfo(
     val description: String,
     val displayName: String
 )
+
+@Serializable
+data class OverpassResponse(
+    val elements: List<OverpassElement> = emptyList()
+)
+
+@Serializable
+data class OverpassElement(
+    val id: Long,
+    val lat: Double,
+    val lon: Double,
+    val tags: Map<String, String> = emptyMap()
+)
+
+data class NearbyPoi(
+    val name: String,
+    val category: String,
+    val distanceMeters: Double = 0.0
+)

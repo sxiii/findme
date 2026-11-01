@@ -34,6 +34,7 @@ fun LocationScreen(isDarkMode: Boolean) {
 
     var location by remember { mutableStateOf<LocationCoordinates?>(null) }
     var placeInfo by remember { mutableStateOf<PlaceInfo?>(null) }
+    var nearbyPois by remember { mutableStateOf<List<NearbyPoi>>(emptyList()) }
     var isLoading by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     var permissionGranted by remember { mutableStateOf(false) }
@@ -54,6 +55,11 @@ fun LocationScreen(isDarkMode: Boolean) {
                         error = err
                     }
                     isLoading = false
+                }
+                scope.launch {
+                    repository.getNearbyPois(lat, lon).onSuccess { pois ->
+                        nearbyPois = pois
+                    }
                 }
             }
         }
@@ -88,6 +94,11 @@ fun LocationScreen(isDarkMode: Boolean) {
                                 error = err
                             }
                             isLoading = false
+                        }
+                        scope.launch {
+                            repository.getNearbyPois(lat, lon).onSuccess { pois ->
+                                nearbyPois = pois
+                            }
                         }
                     }
                 } else {
@@ -154,6 +165,50 @@ fun LocationScreen(isDarkMode: Boolean) {
                     .fillMaxWidth()
                     .requiredHeight(300.dp)
             )
+
+            if (nearbyPois.isNotEmpty()) {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            "Nearby Objects & POIs (OpenStreetMap)",
+                            style = MaterialTheme.typography.titleSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        nearbyPois.take(15).forEach { poi ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        poi.name,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                    Text(
+                                        poi.category,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.outline
+                                    )
+                                }
+                                Text(
+                                    "${poi.distanceMeters.toInt()}m",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                        }
+                    }
+                }
+            }
         }
     }
 }
