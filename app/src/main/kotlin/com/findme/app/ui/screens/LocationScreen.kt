@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import com.findme.app.data.LocationCoordinates
 import com.findme.app.data.LocationRepository
+import com.findme.app.data.NearbyPoi
 import com.findme.app.data.PlaceInfo
 import com.findme.app.ui.components.MapView
 import com.findme.app.ui.components.PlaceCard

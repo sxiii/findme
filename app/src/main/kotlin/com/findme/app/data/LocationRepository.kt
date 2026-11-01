@@ -3,6 +3,7 @@ package com.findme.app.data
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
+import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
 
@@ -59,7 +60,7 @@ class LocationRepository {
                 val url = "https://overpass-api.de/api/interpreter"
 
                 val body = okhttp3.RequestBody.create(
-                    okhttp3.MediaType.parse("application/x-www-form-urlencoded"),
+                    "application/x-www-form-urlencoded".toMediaType(),
                     "data=" + java.net.URLEncoder.encode(query, "UTF-8")
                 )
 
