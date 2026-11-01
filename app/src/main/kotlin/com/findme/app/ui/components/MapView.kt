@@ -41,10 +41,12 @@ fun MapView(
                             error: WebResourceError?
                         ) {
                             super.onReceivedError(view, request, error)
+                            val url = request?.url?.toString().orEmpty()
+                            if (url.contains("favicon.ico")) return
                             if (request?.isForMainFrame == true) {
                                 errorMessage = "MainFrame Error: ${error?.description} (${error?.errorCode})"
                             } else {
-                                errorMessage = "Resource Error: ${request?.url} -> ${error?.description}"
+                                errorMessage = "Resource Error: $url -> ${error?.description}"
                             }
                         }
 
@@ -149,6 +151,7 @@ private fun generateMapHtml(latitude: Double, longitude: Double, isDarkMode: Boo
         <head>
             <meta charset="utf-8" />
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <link rel="icon" href="data:,">
             <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
             <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
             <style>
