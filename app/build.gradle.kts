@@ -38,6 +38,10 @@ android {
 
     kotlinOptions {
         jvmTarget = "21"
+        freeCompilerArgs += listOf(
+            "-Xuse-experimental=kotlin.Experimental",
+            "-opt-in=kotlin.RequiresOptIn"
+        )
     }
 }
 
