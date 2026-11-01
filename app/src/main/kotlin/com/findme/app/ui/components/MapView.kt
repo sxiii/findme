@@ -35,6 +35,9 @@ fun MapView(
                     settings.javaScriptEnabled = true
                     settings.domStorageEnabled = true
                     settings.mixedContentMode = android.webkit.WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
+                    settings.allowFileAccess = true
+                    settings.allowFileAccessFromFileURLs = true
+                    settings.allowUniversalAccessFromFileURLs = true
                     
                     loadUrl("file:///android_asset/map.html?lat=$latitude&lon=$longitude")
                 }
