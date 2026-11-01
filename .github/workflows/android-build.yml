@@ -28,9 +28,6 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-
       - name: Accept Android SDK licenses
         run: yes | sdkmanager --licenses || true
 
@@ -42,12 +39,10 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: wrapper
-          validate-wrappers: false
+          validate-wrappers: true
 
-      - name: Generate Gradle Wrapper
-        run: |
-          gradle wrapper --gradle-version 8.11.1
-          chmod +x gradlew
+      - name: Make gradlew executable
+        run: chmod +x gradlew
 
       - name: Build debug APK
         run: ./gradlew assembleDebug --no-daemon --stacktrace
