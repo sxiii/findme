@@ -49,8 +49,10 @@ fun MapView(
                     webChromeClient = object : WebChromeClient() {
                         override fun onConsoleMessage(consoleMessage: ConsoleMessage?): Boolean {
                             consoleMessage?.let {
-                                if (it.messageLevel() == ConsoleMessage.MessageLevel.ERROR) {
-                                    errorMessage = "JS Error: ${it.message()}"
+                                val msg = it.message()
+                                val line = it.lineNumber()
+                                if (it.messageLevel() == ConsoleMessage.MessageLevel.ERROR || msg.contains("Error", true) || msg.contains("JS_ERR", true)) {
+                                    errorMessage = "JS Error: $msg (line $line)"
                                 }
                             }
                             return super.onConsoleMessage(consoleMessage)
@@ -121,7 +123,6 @@ fun MapView(
 }
 
 private fun generateMapHtml(latitude: Double, longitude: Double, isDarkMode: Boolean): String {
-    val tileLayer = "https://tile.openstreetmap.org/{z}/{x}/{y}.png"
     val bgColor = if (isDarkMode) "#1a1a1a" else "#ffffff"
 
     return """
@@ -141,11 +142,14 @@ private fun generateMapHtml(latitude: Double, longitude: Double, isDarkMode: Boo
         <body>
             <div id="map"></div>
             <script>
+                window.onerror = function(msg, url, line, col, error) {
+                    console.error("JS_ERR: " + msg + " at line " + line + ":" + col);
+                };
                 try {
-                    const map = L.map('map').setView([$latitude, $longitude], 14);
+                    var map = L.map('map').setView([$latitude, $longitude], 14);
                     
-                    L.tileLayer('$tileLayer', {
-                        attribution: `&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors`,
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                        attribution: '&copy; OpenStreetMap contributors',
                         maxZoom: 19
                     }).addTo(map);
                     
@@ -167,7 +171,7 @@ private fun generateMapHtml(latitude: Double, longitude: Double, isDarkMode: Boo
                         map.invalidateSize();
                     }, 300);
                 } catch (e) {
-                    console.error("Leaflet Error: " + e.message);
+                    console.error("Leaflet Exception: " + e.message);
                 }
             </script>
         </body>
