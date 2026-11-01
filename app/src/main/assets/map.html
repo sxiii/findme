@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+    <style>
+        html, body { margin: 0; padding: 0; height: 100%; width: 100%; background-color: #1a1a1a; }
+        #map { position: absolute; top: 0; bottom: 0; left: 0; right: 0; background-color: #1a1a1a; }
+        .leaflet-container { background-color: #1a1a1a; width: 100%; height: 100%; }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const lat = parseFloat(urlParams.get('lat')) || 0.0;
+        const lon = parseFloat(urlParams.get('lon')) || 0.0;
+
+        const map = L.map('map').setView([lat, lon], 14);
+        
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; CARTO',
+            maxZoom: 19,
+            subdomains: 'abc'
+        }).addTo(map);
+        
+        const marker = L.marker([lat, lon]).addTo(map).bindPopup('Location: ' + lat + ', ' + lon).openPopup();
+        
+        const circle = L.circleMarker([lat, lon], {
+            radius: 100,
+            fillColor: '#0066ff',
+            color: '#0066ff',
+            weight: 2,
+            opacity: 0.3,
+            fillOpacity: 0.1
+        }).addTo(map);
+
+        function updateLocation(newLat, newLon) {
+            map.setView([newLat, newLon], 14);
+            marker.setLatLng([newLat, newLon]);
+            circle.setLatLng([newLat, newLon]);
+            map.invalidateSize();
+        }
+    </script>
+</body>
+</html>

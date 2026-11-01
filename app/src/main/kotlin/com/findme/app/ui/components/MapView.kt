@@ -2,17 +2,19 @@ package com.findme.app.ui.components
 
 import android.content.Intent
 import android.net.Uri
-import androidx.compose.foundation.clickable
+import android.webkit.WebChromeClient
+import android.webkit.WebView
+import android.webkit.WebViewClient
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Map
+import androidx.compose.material.icons.filled.OpenInNew
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
 
 @Composable
 fun MapView(
@@ -22,12 +24,29 @@ fun MapView(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
-    val containerColor = if (isDarkMode) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.primaryContainer
 
-    Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .clickable {
+    Box(modifier = modifier) {
+        AndroidView(
+            modifier = Modifier.fillMaxSize(),
+            factory = { context ->
+                WebView(context).apply {
+                    webViewClient = WebViewClient()
+                    webChromeClient = WebChromeClient()
+                    settings.javaScriptEnabled = true
+                    settings.domStorageEnabled = true
+                    settings.mixedContentMode = android.webkit.WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
+                    
+                    loadUrl("file:///android_asset/map.html?lat=$latitude&lon=$longitude")
+                }
+            },
+            update = { webView ->
+                webView.evaluateJavascript("updateLocation($latitude, $longitude);", null)
+            }
+        )
+
+        // Small compact button to open in external maps app
+        SmallFloatingActionButton(
+            onClick = {
                 val gmmIntentUri = Uri.parse("geo:$latitude,$longitude?q=$latitude,$longitude(Location)")
                 val mapIntent = Intent(Intent.ACTION_VIEW, gmmIntentUri).apply {
                     setPackage("com.google.android.apps.maps")
@@ -39,36 +58,16 @@ fun MapView(
                     context.startActivity(browserIntent)
                 }
             },
-        colors = CardDefaults.cardColors(containerColor = containerColor)
-    ) {
-        Box(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp),
-            contentAlignment = Alignment.Center
+                .align(Alignment.TopEnd)
+                .padding(8.dp),
+            containerColor = MaterialTheme.colorScheme.primaryContainer,
+            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
         ) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.Map,
-                    contentDescription = "Map",
-                    modifier = Modifier.size(48.dp),
-                    tint = MaterialTheme.colorScheme.primary
-                )
-                Text(
-                    text = "Tap to open in Maps",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Text(
-                    text = "Lat: %.4f, Lon: %.4f".format(latitude, longitude),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
+            Icon(
+                imageVector = Icons.Filled.OpenInNew,
+                contentDescription = "Open in Maps"
+            )
         }
     }
 }
