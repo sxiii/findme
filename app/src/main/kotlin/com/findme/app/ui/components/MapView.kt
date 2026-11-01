@@ -37,8 +37,12 @@ fun MapView(
 }
 
 private fun generateMapHtml(latitude: Double, longitude: Double, isDarkMode: Boolean): String {
-    val tileLayer = "https://tile.openstreetmap.org/{z}/{x}/{y}.png"
-    val attribution = "&copy; <a href='https://www.openstreetmap.org/copyright'>OpenStreetMap</a> contributors"
+    val tileLayer = if (isDarkMode) {
+        "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+    } else {
+        "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+    }
+    val attribution = "&copy; <a href='https://carto.com/'>CARTO</a>"
     val bgColor = if (isDarkMode) "#1a1a1a" else "#ffffff"
 
     return """
