@@ -204,7 +204,7 @@ fun LocationScreen(isDarkMode: Boolean) {
                                     color = MaterialTheme.colorScheme.primary
                                 )
                             }
-                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                            Divider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
                         }
                     }
                 }
