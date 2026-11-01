@@ -1,5 +1,6 @@
 package com.findme.app.ui.components
 
+import android.webkit.WebChromeClient
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.compose.runtime.Composable
@@ -18,9 +19,11 @@ fun MapView(
         factory = { context ->
             WebView(context).apply {
                 webViewClient = WebViewClient()
+                webChromeClient = WebChromeClient()
                 settings.javaScriptEnabled = true
                 settings.domStorageEnabled = true
                 settings.mixedContentMode = android.webkit.WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
+                settings.loadsImagesAutomatically = true
                 
                 val htmlContent = generateMapHtml(latitude, longitude, isDarkMode)
                 loadDataWithBaseURL("https://app.local", htmlContent, "text/html", "utf-8", null)
@@ -55,7 +58,7 @@ private fun generateMapHtml(latitude: Double, longitude: Double, isDarkMode: Boo
             <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
             <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
             <style>
-                html, body { margin: 0; padding: 0; height: 100%; width: 100%; }
+                html, body { margin: 0; padding: 0; height: 100%; width: 100%; background-color: #1a1a1a; }
                 #map { position: absolute; top: 0; bottom: 0; left: 0; right: 0; background-color: #1a1a1a; }
                 .leaflet-container { background-color: #1a1a1a; width: 100%; height: 100%; }
             </style>
@@ -84,6 +87,11 @@ private fun generateMapHtml(latitude: Double, longitude: Double, isDarkMode: Boo
                     opacity: 0.3,
                     fillOpacity: 0.1
                 }).addTo(map);
+
+                // Fix for WebView sizing in Android Compose
+                setTimeout(function() {
+                    map.invalidateSize();
+                }, 300);
             </script>
         </body>
         </html>
