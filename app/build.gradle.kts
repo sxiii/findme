@@ -5,6 +5,8 @@ plugins {
     id("org.jetbrains.kotlin.plugin.compose") version "2.1.0"
 }
 
+import org.gradle.jvm.toolchain.JavaLanguageVersion
+
 android {
     namespace = "com.findme.app"
     compileSdk = 35
@@ -36,6 +38,12 @@ android {
 
     kotlinOptions {
         jvmTarget = "21"
+    }
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
     }
 }
 
