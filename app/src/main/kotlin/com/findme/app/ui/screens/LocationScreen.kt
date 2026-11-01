@@ -10,7 +10,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.CoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -157,7 +156,7 @@ fun LocationScreen(isDarkMode: Boolean) {
 
 private fun requestLocationUpdate(
     context: Context,
-    scope: CoroutineScope,
+    scope: androidx.compose.runtime.CoroutineScope,
     onLocation: (Double, Double) -> Unit
 ) {
     scope.launch {
@@ -183,7 +182,7 @@ private fun requestLocationUpdate(
 }
 
 private fun fetchPlaceInfo(
-    scope: CoroutineScope,
+    scope: androidx.compose.runtime.CoroutineScope,
     repository: LocationRepository,
     latitude: Double,
     longitude: Double,
