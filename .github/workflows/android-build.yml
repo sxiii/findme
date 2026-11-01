@@ -31,6 +31,9 @@ jobs:
       - name: Accept Android SDK licenses
         run: |
           yes | sdkmanager --licenses || true
+
+      - name: Install Android SDK components
+        run: |
           sdkmanager --install "platforms;android-35" "build-tools;35.0.0" "cmdline-tools;latest"
 
       - name: Setup Gradle
