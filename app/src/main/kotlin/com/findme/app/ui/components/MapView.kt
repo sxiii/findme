@@ -122,7 +122,6 @@ fun MapView(
 
 private fun generateMapHtml(latitude: Double, longitude: Double, isDarkMode: Boolean): String {
     val tileLayer = "https://tile.openstreetmap.org/{z}/{x}/{y}.png"
-    val attribution = "&copy; <a href=\"https://www.openstreetmap.org/copyright\">OpenStreetMap</a> contributors"
     val bgColor = if (isDarkMode) "#1a1a1a" else "#ffffff"
 
     return """
@@ -146,7 +145,7 @@ private fun generateMapHtml(latitude: Double, longitude: Double, isDarkMode: Boo
                     const map = L.map('map').setView([$latitude, $longitude], 14);
                     
                     L.tileLayer('$tileLayer', {
-                        attribution: "$attribution",
+                        attribution: `&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors`,
                         maxZoom: 19
                     }).addTo(map);
                     
