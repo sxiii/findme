@@ -1,11 +1,18 @@
 package com.findme.app.ui.components
 
-import android.webkit.WebChromeClient
-import android.webkit.WebView
-import android.webkit.WebViewClient
+import android.content.Intent
+import android.net.Uri
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Map
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 
 @Composable
 fun MapView(
@@ -14,82 +21,54 @@ fun MapView(
     isDarkMode: Boolean,
     modifier: Modifier = Modifier
 ) {
-    AndroidView(
-        modifier = modifier,
-        factory = { context ->
-            WebView(context).apply {
-                webViewClient = WebViewClient()
-                webChromeClient = WebChromeClient()
-                settings.javaScriptEnabled = true
-                settings.domStorageEnabled = true
-                settings.mixedContentMode = android.webkit.WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
-                settings.loadsImagesAutomatically = true
-                
-                val htmlContent = generateMapHtml(latitude, longitude, isDarkMode)
-                loadDataWithBaseURL("https://app.local", htmlContent, "text/html", "utf-8", null)
+    val context = LocalContext.current
+    val containerColor = if (isDarkMode) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.primaryContainer
+
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable {
+                val gmmIntentUri = Uri.parse("geo:$latitude,$longitude?q=$latitude,$longitude(Location)")
+                val mapIntent = Intent(Intent.ACTION_VIEW, gmmIntentUri).apply {
+                    setPackage("com.google.android.apps.maps")
+                }
+                try {
+                    context.startActivity(mapIntent)
+                } catch (e: Exception) {
+                    val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse("https://www.openstreetmap.org/?mlat=$latitude&mlon=$longitude#map=16/$latitude/$longitude"))
+                    context.startActivity(browserIntent)
+                }
+            },
+        colors = CardDefaults.cardColors(containerColor = containerColor)
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Map,
+                    contentDescription = "Map",
+                    modifier = Modifier.size(48.dp),
+                    tint = MaterialTheme.colorScheme.primary
+                )
+                Text(
+                    text = "Tap to open in Maps",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = "Lat: %.4f, Lon: %.4f".format(latitude, longitude),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
-        },
-        update = { webView ->
-            val htmlContent = generateMapHtml(latitude, longitude, isDarkMode)
-            webView.loadDataWithBaseURL("https://app.local", htmlContent, "text/html", "utf-8", null)
         }
-    )
-}
-
-private fun generateMapHtml(latitude: Double, longitude: Double, isDarkMode: Boolean): String {
-    val tileLayer = if (isDarkMode) {
-        "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-    } else {
-        "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
     }
-    val attribution = "&copy; <a href='https://carto.com/'>CARTO</a>"
-    val bgColor = if (isDarkMode) "#1a1a1a" else "#ffffff"
-
-    return """
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <meta charset="utf-8" />
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
-            <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-            <style>
-                html, body { margin: 0; padding: 0; height: 100%; width: 100%; background-color: $bgColor; }
-                #map { position: absolute; top: 0; bottom: 0; left: 0; right: 0; background-color: $bgColor; }
-                .leaflet-container { background-color: $bgColor; width: 100%; height: 100%; }
-            </style>
-        </head>
-        <body>
-            <div id="map"></div>
-            <script>
-                const map = L.map('map').setView([$latitude, $longitude], 14);
-                
-                L.tileLayer('$tileLayer', {
-                    attribution: '$attribution',
-                    maxZoom: 19,
-                    subdomains: 'abc'
-                }).addTo(map);
-                
-                L.marker([$latitude, $longitude])
-                    .addTo(map)
-                    .bindPopup('Location: $latitude, $longitude')
-                    .openPopup();
-                    
-                L.circleMarker([$latitude, $longitude], {
-                    radius: 100,
-                    fillColor: '#0066ff',
-                    color: '#0066ff',
-                    weight: 2,
-                    opacity: 0.3,
-                    fillOpacity: 0.1
-                }).addTo(map);
-
-                // Ensure Leaflet recalculates size after AndroidView layout measurement
-                setTimeout(function() {
-                    map.invalidateSize();
-                }, 300);
-            </script>
-        </body>
-        </html>
-    """.trimIndent()
 }
