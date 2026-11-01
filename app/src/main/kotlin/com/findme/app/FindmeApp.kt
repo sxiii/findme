@@ -11,6 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.findme.app.ui.screens.LocationScreen
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FindmeApp() {
     var isDarkMode by remember { mutableStateOf(false) }

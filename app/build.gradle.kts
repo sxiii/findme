@@ -39,8 +39,8 @@ android {
     kotlinOptions {
         jvmTarget = "21"
         freeCompilerArgs += listOf(
-            "-Xuse-experimental=kotlin.Experimental",
-            "-opt-in=kotlin.RequiresOptIn"
+            "-opt-in=androidx.compose.material3.ExperimentalMaterial3Api",
+            "-opt-in=androidx.compose.runtime.ExperimentalComposeApi"
         )
     }
 }
