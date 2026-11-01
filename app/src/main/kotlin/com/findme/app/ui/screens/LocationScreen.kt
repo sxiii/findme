@@ -21,6 +21,7 @@ import com.findme.app.data.PlaceInfo
 import com.findme.app.ui.components.MapView
 import com.findme.app.ui.components.PlaceCard
 import com.google.android.gms.location.LocationServices
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 @Composable
@@ -156,7 +157,7 @@ fun LocationScreen(isDarkMode: Boolean) {
 
 private fun requestLocationUpdate(
     context: Context,
-    scope: androidx.compose.runtime.CoroutineScope,
+    scope: CoroutineScope,
     onLocation: (Double, Double) -> Unit
 ) {
     scope.launch {
@@ -182,7 +183,7 @@ private fun requestLocationUpdate(
 }
 
 private fun fetchPlaceInfo(
-    scope: androidx.compose.runtime.CoroutineScope,
+    scope: CoroutineScope,
     repository: LocationRepository,
     latitude: Double,
     longitude: Double,
