@@ -152,7 +152,7 @@ fun LocationScreen(isDarkMode: Boolean) {
                 isDarkMode = isDarkMode,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(300.dp)
+                    .requiredHeight(300.dp)
             )
         }
     }
