@@ -23,14 +23,17 @@ fun MapView(
                 settings.mixedContentMode = android.webkit.WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
                 
                 val htmlContent = generateMapHtml(latitude, longitude, isDarkMode)
-                loadData(htmlContent, "text/html", "utf-8")
+                loadDataWithBaseURL("https://app.local", htmlContent, "text/html", "utf-8", null)
             }
+        },
+        update = { webView ->
+            val htmlContent = generateMapHtml(latitude, longitude, isDarkMode)
+            webView.loadDataWithBaseURL("https://app.local", htmlContent, "text/html", "utf-8", null)
         }
     )
 }
 
 private fun generateMapHtml(latitude: Double, longitude: Double, isDarkMode: Boolean): String {
-    val theme = if (isDarkMode) "dark" else "light"
     val tileLayer = if (isDarkMode) {
         "https://{s}.basemaps.cartocdn.com/dark/{z}/{x}/{y}{r}.png"
     } else {
@@ -52,9 +55,9 @@ private fun generateMapHtml(latitude: Double, longitude: Double, isDarkMode: Boo
             <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
             <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
             <style>
-                body { margin: 0; padding: 0; }
-                #map { position: absolute; top: 0; bottom: 0; width: 100%; background-color: #1a1a1a; }
-                .leaflet-container { background-color: #1a1a1a; }
+                html, body { margin: 0; padding: 0; height: 100%; width: 100%; }
+                #map { position: absolute; top: 0; bottom: 0; left: 0; right: 0; background-color: #1a1a1a; }
+                .leaflet-container { background-color: #1a1a1a; width: 100%; height: 100%; }
             </style>
         </head>
         <body>
