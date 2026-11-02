@@ -121,7 +121,8 @@ fun LocationScreen(isDarkMode: Boolean) {
             0 -> {
                 Column(
                     modifier = Modifier
-                        .fillMaxSize()
+                        .fillMaxWidth()
+                        .weight(1f)
                         .verticalScroll(rememberScrollState())
                         .padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -267,7 +268,9 @@ fun LocationScreen(isDarkMode: Boolean) {
                 // GeoHack DB Tab - Masonry Tiled Grid
                 LazyVerticalStaggeredGrid(
                     columns = StaggeredGridCells.Fixed(3),
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
                     contentPadding = PaddingValues(16.dp),
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                     verticalItemSpacing = 6.dp

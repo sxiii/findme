@@ -153,20 +153,20 @@ private fun generateMapHtml(latitude: Double, longitude: Double, isDarkMode: Boo
                 html, body {
                     margin: 0;
                     padding: 0;
-                    height: 100%;
+                    height: 300px;
                     width: 100%;
                     background-color: $bgColor;
                     overflow: hidden;
                 }
                 #map {
                     width: 100%;
-                    height: 100%;
+                    height: 300px;
                     background-color: $bgColor;
                 }
                 .leaflet-container {
                     background-color: $bgColor;
                     width: 100%;
-                    height: 100%;
+                    height: 300px;
                 }
                 .leaflet-bar a {
                     background-color: #242424 !important;
@@ -200,7 +200,7 @@ private fun generateMapHtml(latitude: Double, longitude: Double, isDarkMode: Boo
                 try {
                     var map = L.map('map').setView([$latitude, $longitude], 15);
                     
-                    var tileLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                    var tileLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png', {
                         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
                         subdomains: 'abcd',
                         maxZoom: 20
