@@ -49,9 +49,11 @@ fun LocationScreen(isDarkMode: Boolean) {
     var latInput by remember { mutableStateOf("40.7128") }
     var lonInput by remember { mutableStateOf("-74.0060") }
     var geoHackProviders by remember { mutableStateOf<List<GeoHackProviderLinks>>(emptyList()) }
-    var showGeoHackSheet by remember { mutableStateOf(false) }
     var isGeoHackLoading by remember { mutableStateOf(false) }
     var geoHackError by remember { mutableStateOf<String?>(null) }
+
+    var selectedTab by remember { mutableStateOf(0) }
+    val tabs = listOf("Location & Map", "GeoHack DB")
 
     val locationPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -96,322 +98,304 @@ fun LocationScreen(isDarkMode: Boolean) {
             .fillMaxSize()
             .statusBarsPadding()
             .navigationBarsPadding()
-            .verticalScroll(rememberScrollState())
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        Button(
-            onClick = {
-                isLoading = true
-                error = null
-                if (permissionGranted) {
-                    requestLocationUpdate(context, scope) { lat, lon ->
-                        location = LocationCoordinates(lat, lon)
-                        latInput = String.format(Locale.US, "%.6f", lat)
-                        lonInput = String.format(Locale.US, "%.6f", lon)
-                        fetchPlaceInfo(scope, repository, lat, lon) { info, err ->
-                            if (info != null) {
-                                placeInfo = info
-                                error = null
-                            } else {
-                                error = err
-                            }
-                            isLoading = false
-                        }
-                        scope.launch {
-                            repository.getNearbyPois(lat, lon).onSuccess { pois ->
-                                nearbyPois = pois
-                            }
-                            runCatching {
-                                geoHackProviders = GeoHackPageExtractor.extract(lat, lon)
-                            }
-                        }
-                    }
-                } else {
-                    locationPermissionLauncher.launch(
-                        arrayOf(
-                            Manifest.permission.ACCESS_FINE_LOCATION,
-                            Manifest.permission.ACCESS_COARSE_LOCATION
-                        )
-                    )
-                }
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(48.dp),
-            enabled = !isLoading
-        ) {
-            Icon(Icons.Filled.MyLocation, contentDescription = null)
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(if (isLoading) "Locating..." else "Get Location")
+        TabRow(selectedTabIndex = selectedTab) {
+            tabs.forEachIndexed { index, title ->
+                Tab(
+                    selected = selectedTab == index,
+                    onClick = { selectedTab = index },
+                    text = { Text(title) }
+                )
+            }
         }
 
-        // Manual coordinate entry & GeoHack sheet trigger card
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-        ) {
-            Column(
-                modifier = Modifier.padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                Text(
-                    "Manual Coordinates & GeoHack",
-                    style = MaterialTheme.typography.titleSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+        when (selectedTab) {
+            0 -> {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    OutlinedTextField(
-                        value = latInput,
-                        onValueChange = { latInput = it },
-                        label = { Text("Latitude") },
-                        modifier = Modifier.weight(1f),
-                        singleLine = true
-                    )
-                    OutlinedTextField(
-                        value = lonInput,
-                        onValueChange = { lonInput = it },
-                        label = { Text("Longitude") },
-                        modifier = Modifier.weight(1f),
-                        singleLine = true
-                    )
-                }
-                Button(
-                    onClick = {
-                        scope.launch {
-                            isGeoHackLoading = true
-                            geoHackError = null
-                            try {
-                                val lat = latInput.toDoubleOrNull() ?: throw IllegalArgumentException("Invalid latitude value")
-                                val lon = lonInput.toDoubleOrNull() ?: throw IllegalArgumentException("Invalid longitude value")
-                                location = LocationCoordinates(lat, lon)
-                                fetchPlaceInfo(scope, repository, lat, lon) { info, err ->
-                                    if (info != null) {
-                                        placeInfo = info
-                                        error = null
-                                    } else {
-                                        error = err
+                    Button(
+                        onClick = {
+                            isLoading = true
+                            error = null
+                            if (permissionGranted) {
+                                requestLocationUpdate(context, scope) { lat, lon ->
+                                    location = LocationCoordinates(lat, lon)
+                                    latInput = String.format(Locale.US, "%.6f", lat)
+                                    lonInput = String.format(Locale.US, "%.6f", lon)
+                                    fetchPlaceInfo(scope, repository, lat, lon) { info, err ->
+                                        if (info != null) {
+                                            placeInfo = info
+                                            error = null
+                                        } else {
+                                            error = err
+                                        }
+                                        isLoading = false
+                                    }
+                                    scope.launch {
+                                        repository.getNearbyPois(lat, lon).onSuccess { pois ->
+                                            nearbyPois = pois
+                                        }
+                                        runCatching {
+                                            geoHackProviders = GeoHackPageExtractor.extract(lat, lon)
+                                        }
                                     }
                                 }
-                                repository.getNearbyPois(lat, lon).onSuccess { pois ->
-                                    nearbyPois = pois
-                                }
-                                geoHackProviders = GeoHackPageExtractor.extract(lat, lon)
-                                showGeoHackSheet = true
-                            } catch (e: Exception) {
-                                geoHackError = e.message ?: "Failed to fetch GeoHack"
-                            } finally {
-                                isGeoHackLoading = false
-                            }
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    enabled = !isGeoHackLoading
-                ) {
-                    Text(if (isGeoHackLoading) "Fetching GeoHack..." else "Enter Coordinates & View GeoHack Sheet")
-                }
-                if (geoHackProviders.isNotEmpty()) {
-                    OutlinedButton(
-                        onClick = { showGeoHackSheet = true },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("View GeoHack Providers Sheet (${geoHackProviders.size} providers)")
-                    }
-                }
-                geoHackError?.let {
-                    Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
-                }
-            }
-        }
-
-        if (isLoading) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator()
-            }
-        }
-
-        error?.let {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.errorContainer
-                )
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Text(
-                        "Error",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onErrorContainer
-                    )
-                    Text(
-                        it,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onErrorContainer
-                    )
-                }
-            }
-        }
-
-        placeInfo?.let { info ->
-            PlaceCard(placeInfo = info)
-            MapView(
-                latitude = info.coordinates.latitude,
-                longitude = info.coordinates.longitude,
-                isDarkMode = isDarkMode,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .requiredHeight(300.dp)
-            )
-
-            if (nearbyPois.isNotEmpty()) {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-                ) {
-                    Column(
-                        modifier = Modifier.padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Text(
-                            "Nearby Objects & POIs (OpenStreetMap)",
-                            style = MaterialTheme.typography.titleSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        nearbyPois.take(15).forEach { poi ->
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(
-                                        poi.name,
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                            } else {
+                                locationPermissionLauncher.launch(
+                                    arrayOf(
+                                        Manifest.permission.ACCESS_FINE_LOCATION,
+                                        Manifest.permission.ACCESS_COARSE_LOCATION
                                     )
-                                    Text(
-                                        poi.category,
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.outline
-                                    )
-                                }
-                                Text(
-                                    "${poi.distanceMeters.toInt()}m",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.primary
                                 )
                             }
-                            Divider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(48.dp),
+                        enabled = !isLoading
+                    ) {
+                        Icon(Icons.Filled.MyLocation, contentDescription = null)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(if (isLoading) "Locating..." else "Get Location")
+                    }
+
+                    if (isLoading) {
+                        Box(
+                            modifier = Modifier.fillMaxWidth().height(100.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator()
+                        }
+                    }
+
+                    error?.let {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.errorContainer
+                            )
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(16.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Text(
+                                    "Error",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = MaterialTheme.colorScheme.onErrorContainer
+                                )
+                                Text(
+                                    it,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onErrorContainer
+                                )
+                            }
+                        }
+                    }
+
+                    placeInfo?.let { info ->
+                        PlaceCard(placeInfo = info)
+                        MapView(
+                            latitude = info.coordinates.latitude,
+                            longitude = info.coordinates.longitude,
+                            isDarkMode = isDarkMode,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .requiredHeight(300.dp)
+                        )
+
+                        if (nearbyPois.isNotEmpty()) {
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                            ) {
+                                Column(
+                                    modifier = Modifier.padding(16.dp),
+                                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Text(
+                                        "Nearby Objects & POIs (OpenStreetMap)",
+                                        style = MaterialTheme.typography.titleSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                    nearbyPois.take(15).forEach { poi ->
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Column(modifier = Modifier.weight(1f)) {
+                                                Text(
+                                                    poi.name,
+                                                    style = MaterialTheme.typography.bodyMedium,
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                )
+                                                Text(
+                                                    poi.category,
+                                                    style = MaterialTheme.typography.bodySmall,
+                                                    color = MaterialTheme.colorScheme.outline
+                                                )
+                                            }
+                                            Text(
+                                                "${poi.distanceMeters.toInt()}m",
+                                                style = MaterialTheme.typography.bodyMedium,
+                                                color = MaterialTheme.colorScheme.primary
+                                            )
+                                        }
+                                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                                    }
+                                }
+                            }
                         }
                     }
                 }
             }
-        }
-    }
-
-    if (showGeoHackSheet) {
-        GeoHackBottomSheet(
-            providers = geoHackProviders,
-            onDismiss = { showGeoHackSheet = false },
-            onLinkClick = { url ->
-                runCatching {
-                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
-                    context.startActivity(intent)
-                }
-            }
-        )
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun GeoHackBottomSheet(
-    providers: List<GeoHackProviderLinks>,
-    onDismiss: () -> Unit,
-    onLinkClick: (String) -> Unit
-) {
-    val sheetState = rememberModalBottomSheetState()
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        sheetState = sheetState
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
-                .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            Text(
-                "GeoHack Map Providers & Links",
-                style = MaterialTheme.typography.titleLarge,
-                color = MaterialTheme.colorScheme.primary
-            )
-            if (providers.isEmpty()) {
-                Text("No map providers available.", style = MaterialTheme.typography.bodyMedium)
-            } else {
-                providers.forEach { provider ->
+            1 -> {
+                // GeoHack DB Tab - Compact Multi-Column Spreadsheet
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
                     ) {
                         Column(
-                            modifier = Modifier.padding(12.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                            modifier = Modifier.padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
                             Text(
-                                provider.provider,
+                                "GeoHack DB Coordinate Query",
                                 style = MaterialTheme.typography.titleMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                color = MaterialTheme.colorScheme.primary
                             )
-                            if (provider.map.isNotEmpty()) {
-                                Text("Map Links:", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
-                                provider.map.forEach { link ->
-                                    TextButton(
-                                        onClick = { onLinkClick(link.url) },
-                                        contentPadding = PaddingValues(4.dp)
-                                    ) {
-                                        Text(link.label, style = MaterialTheme.typography.bodySmall)
-                                    }
-                                }
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                OutlinedTextField(
+                                    value = latInput,
+                                    onValueChange = { latInput = it },
+                                    label = { Text("Latitude") },
+                                    modifier = Modifier.weight(1f),
+                                    singleLine = true
+                                )
+                                OutlinedTextField(
+                                    value = lonInput,
+                                    onValueChange = { lonInput = it },
+                                    label = { Text("Longitude") },
+                                    modifier = Modifier.weight(1f),
+                                    singleLine = true
+                                )
                             }
-                            if (provider.satellite.isNotEmpty()) {
-                                Text("Satellite Links:", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.secondary)
-                                provider.satellite.forEach { link ->
-                                    TextButton(
-                                        onClick = { onLinkClick(link.url) },
-                                        contentPadding = PaddingValues(4.dp)
-                                    ) {
-                                        Text(link.label, style = MaterialTheme.typography.bodySmall)
+                            Button(
+                                onClick = {
+                                    scope.launch {
+                                        isGeoHackLoading = true
+                                        geoHackError = null
+                                        try {
+                                            val lat = latInput.toDoubleOrNull() ?: throw IllegalArgumentException("Invalid latitude value")
+                                            val lon = lonInput.toDoubleOrNull() ?: throw IllegalArgumentException("Invalid longitude value")
+                                            geoHackProviders = GeoHackPageExtractor.extract(lat, lon)
+                                        } catch (e: Exception) {
+                                            geoHackError = e.message ?: "Failed to fetch GeoHack DB"
+                                        } finally {
+                                            isGeoHackLoading = false
+                                        }
                                     }
-                                }
+                                },
+                                modifier = Modifier.fillMaxWidth(),
+                                enabled = !isGeoHackLoading
+                            ) {
+                                Text(if (isGeoHackLoading) "Querying GeoHack DB..." else "Fetch GeoHack DB")
                             }
-                            if (provider.other.isNotEmpty()) {
-                                Text("Other Links:", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.outline)
-                                provider.other.forEach { link ->
-                                    TextButton(
-                                        onClick = { onLinkClick(link.url) },
-                                        contentPadding = PaddingValues(4.dp)
-                                    ) {
-                                        Text(link.label, style = MaterialTheme.typography.bodySmall)
+                            geoHackError?.let {
+                                Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                            }
+                        }
+                    }
+
+                    Text(
+                        "GeoHack Spreadsheet DB (${geoHackProviders.size} Providers)",
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+
+                    if (geoHackProviders.isEmpty()) {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                        ) {
+                            Box(modifier = Modifier.padding(24.dp).fillMaxWidth(), contentAlignment = Alignment.Center) {
+                                Text(
+                                    "No GeoHack links loaded yet. Enter coordinates above and tap 'Fetch GeoHack DB'.",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.outline
+                                )
+                            }
+                        }
+                    } else {
+                        geoHackProviders.forEach { provider ->
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                            ) {
+                                Column(
+                                    modifier = Modifier.padding(12.dp),
+                                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Text(
+                                        provider.provider,
+                                        style = MaterialTheme.typography.titleMedium,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                    val allLinks = provider.map + provider.satellite + provider.other
+                                    if (allLinks.isNotEmpty()) {
+                                        allLinks.chunked(2).forEach { rowLinks ->
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                            ) {
+                                                rowLinks.forEach { link ->
+                                                    OutlinedButton(
+                                                        onClick = {
+                                                            runCatching {
+                                                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(link.url))
+                                                                context.startActivity(intent)
+                                                            }
+                                                        },
+                                                        modifier = Modifier.weight(1f).height(36.dp),
+                                                        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 2.dp)
+                                                    ) {
+                                                        Text(
+                                                            link.label,
+                                                            style = MaterialTheme.typography.bodySmall,
+                                                            maxLines = 1,
+                                                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                                                        )
+                                                    }
+                                                }
+                                                if (rowLinks.size == 1) {
+                                                    Spacer(modifier = Modifier.weight(1f))
+                                                }
+                                            }
+                                        }
                                     }
                                 }
                             }
                         }
                     }
+                    Spacer(modifier = Modifier.height(32.dp))
                 }
             }
-            Spacer(modifier = Modifier.height(32.dp))
         }
     }
 }

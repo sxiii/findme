@@ -80,6 +80,8 @@ object GeoHackPageExtractor {
                 ?: match.groups[3]?.value
                 ?: continue
             val url = decodeHtml(rawUrl.trim()).replace("&amp;", "&")
+            // Link checker: if the URL includes numbers (coordinates/parameters), add it. Otherwise skip.
+            if (!url.any { it.isDigit() }) continue
             val uri = runCatching { URI(url) }.getOrNull() ?: continue
             val scheme = uri.scheme?.lowercase(Locale.ROOT) ?: continue
             if (scheme != "http" && scheme != "https") continue
