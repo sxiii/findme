@@ -149,9 +149,9 @@ private fun generateMapHtml(latitude: Double, longitude: Double, isDarkMode: Boo
             <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
             <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
             <style>
-                html, body { margin: 0; padding: 0; height: 100%; width: 100%; background-color: $bgColor; overflow: hidden; }
-                #map { width: 100%; height: 100%; background-color: $bgColor; }
-                .leaflet-container { background-color: $bgColor; width: 100%; height: 100%; }
+                html, body { margin: 0; padding: 0; height: 300px; width: 100%; background-color: $bgColor; overflow: hidden; }
+                #map { width: 100%; height: 300px; background-color: $bgColor; }
+                .leaflet-container { background-color: $bgColor; width: 100%; height: 300px; }
             </style>
         </head>
         <body>
@@ -163,25 +163,26 @@ private fun generateMapHtml(latitude: Double, longitude: Double, isDarkMode: Boo
                 try {
                     var map = L.map('map').setView([$latitude, $longitude], 15);
                     
-                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                        attribution: '&copy; OpenStreetMap contributors',
+                    var tileLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                        attribution: '&copy; OpenStreetMap',
                         maxZoom: 19
-                    }).addTo(map);
+                    });
+
+                    tileLayer.on('tileload', function() {
+                        console.log("Tile loaded successfully");
+                    });
+
+                    tileLayer.on('tileerror', function(e) {
+                        console.error("Tile error: " + JSON.stringify(e));
+                    });
+
+                    tileLayer.addTo(map);
                     
-                    L.marker([$latitude, $longitude]).addTo(map).bindPopup('Location: $latitude, $longitude').openPopup();
-                    
-                    L.circleMarker([$latitude, $longitude], {
-                        radius: 100,
-                        fillColor: '#0066ff',
-                        color: '#0066ff',
-                        weight: 2,
-                        opacity: 0.3,
-                        fillOpacity: 0.1
-                    }).addTo(map);
+                    L.marker([$latitude, $longitude]).addTo(map).bindPopup('Location: $latitude, $longitude');
 
                     setTimeout(function() {
-                        map.invalidateSize();
-                    }, 250);
+                        map.invalidateSize(true);
+                    }, 300);
                 } catch (e) {
                     console.error("Leaflet Init Exception: " + e.message);
                 }
