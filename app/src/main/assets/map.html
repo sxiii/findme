@@ -2,251 +2,201 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="color-scheme" content="dark">
-    <title>Findme map</title>
+    <title>Findme Map</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <style>
         :root {
             color-scheme: dark;
-            --map-bg: #10151d;
-            --panel-bg: rgba(20, 27, 38, .92);
-            --panel-border: rgba(255, 255, 255, .12);
-            --text: #e8eef8;
-            --muted: #aab6c8;
-            --accent: #78aaff;
+            --surface: #171b22;
+            --text: #f1f5f9;
+            --muted: #aab4c2;
+            --accent: #72e0c1;
         }
 
         * { box-sizing: border-box; }
-        html, body, #map { width: 100%; height: 100%; margin: 0; }
-        body { overflow: hidden; background: var(--map-bg); font-family: system-ui, sans-serif; }
-        #map { background: var(--map-bg); }
+
+        html, body, #map {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            overflow: hidden;
+            background: #111820;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        }
 
         .map-status {
             position: absolute;
             z-index: 1000;
-            top: 12px;
-            left: 50%;
-            max-width: calc(100% - 32px);
-            transform: translateX(-50%);
-            padding: 8px 12px;
-            border: 1px solid var(--panel-border);
-            border-radius: 12px;
-            background: var(--panel-bg);
-            color: var(--muted);
-            font-size: 12px;
+            left: 12px;
+            right: 68px;
+            bottom: 16px;
+            width: fit-content;
+            max-width: calc(100% - 92px);
+            padding: 9px 13px;
+            border: 1px solid rgba(255, 255, 255, .09);
+            border-radius: 14px;
+            background: rgba(23, 27, 34, .94);
+            color: var(--text);
+            font-size: 13px;
             line-height: 1.35;
-            text-align: center;
-            box-shadow: 0 4px 18px rgba(0, 0, 0, .28);
+            box-shadow: 0 4px 18px rgba(0, 0, 0, .32);
             pointer-events: none;
-            transition: opacity .2s ease;
         }
-        .map-status[hidden] { display: none; }
 
-        .place-marker {
-            width: 18px;
-            height: 18px;
-            border: 3px solid #f4f8ff;
-            border-radius: 50%;
-            background: #6ea8ff;
-            box-shadow: 0 2px 12px rgba(0, 0, 0, .65), 0 0 0 5px rgba(110, 168, 255, .22);
+        .map-status small {
+            display: block;
+            margin-top: 2px;
+            color: var(--muted);
+            font-size: 11px;
         }
+
+        .locate-button {
+            position: absolute;
+            z-index: 1000;
+            right: 14px;
+            bottom: 16px;
+            width: 44px;
+            height: 44px;
+            padding: 0;
+            border: 1px solid rgba(255, 255, 255, .12);
+            border-radius: 14px;
+            background: var(--surface);
+            color: var(--accent);
+            font-size: 23px;
+            box-shadow: 0 4px 18px rgba(0, 0, 0, .35);
+            cursor: pointer;
+        }
+
+        .locate-button:active { transform: scale(.96); }
+
         .user-marker {
-            width: 18px;
-            height: 18px;
+            width: 20px;
+            height: 20px;
             border: 3px solid #fff;
             border-radius: 50%;
-            background: #36a8ff;
-            box-shadow: 0 2px 12px rgba(0, 0, 0, .7), 0 0 0 6px rgba(54, 168, 255, .25);
+            background: #58d6b2;
+            box-shadow: 0 0 0 6px rgba(88, 214, 178, .24), 0 2px 8px rgba(0, 0, 0, .5);
         }
 
-        .leaflet-container { background: var(--map-bg); color: var(--text); font: inherit; }
-        .leaflet-control-zoom a,
+        .leaflet-control-zoom a {
+            background: #171b22 !important;
+            color: #f1f5f9 !important;
+            border-color: rgba(255, 255, 255, .12) !important;
+        }
+
         .leaflet-control-attribution {
-            border-color: var(--panel-border) !important;
-            background: var(--panel-bg) !important;
-            color: var(--text) !important;
-            backdrop-filter: blur(8px);
+            background: rgba(23, 27, 34, .8) !important;
+            color: #c3ccd7 !important;
         }
-        .leaflet-control-zoom a:hover { background: #2b374a !important; }
-        .leaflet-control-attribution a { color: var(--accent) !important; }
-        .leaflet-popup-content-wrapper, .leaflet-popup-tip {
-            background: #202a39;
-            color: var(--text);
-            box-shadow: 0 5px 22px rgba(0, 0, 0, .45);
-        }
-        .leaflet-popup-content { margin: 12px 15px; }
-        .popup-title { margin: 0 0 4px; font-weight: 650; }
-        .popup-detail { color: var(--muted); font-size: 12px; }
-        .leaflet-control-attribution { font-size: 10px !important; }
 
-        @media (prefers-reduced-motion: reduce) {
-            .map-status { transition: none; }
+        .leaflet-control-attribution a { color: #72e0c1 !important; }
+        .leaflet-popup-content-wrapper, .leaflet-popup-tip {
+            background: #202630;
+            color: #f1f5f9;
         }
     </style>
 </head>
 <body>
-<div id="map" role="application" aria-label="Dark map showing places"></div>
-<div id="map-status" class="map-status" role="status" aria-live="polite">Loading map…</div>
+<div id="map" aria-label="Dark themed location map"></div>
+<div id="status" class="map-status">Finding your location<small>Waiting for a location update</small></div>
+<button id="locate" class="locate-button" type="button" aria-label="Center map on my location" title="My location">◎</button>
+
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-    (() => {
-        const status = document.getElementById('map-status');
-        const defaultCenter = [20, 0];
-        let markersLayer;
-        let userLayer;
-        let map;
+(function () {
+    const map = L.map('map', {
+        zoomControl: false,
+        preferCanvas: true
+    }).setView([20, 0], 2);
 
-        function showStatus(message) {
-            status.textContent = message;
-            status.hidden = false;
+    L.control.zoom({ position: 'topright' }).addTo(map);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+        subdomains: 'abcd',
+        maxZoom: 20
+    }).addTo(map);
+
+    const userIcon = L.divIcon({
+        className: '',
+        html: '<div class="user-marker"></div>',
+        iconSize: [20, 20],
+        iconAnchor: [10, 10]
+    });
+    let marker = null;
+    let accuracyCircle = null;
+    let hasLocation = false;
+    const status = document.getElementById('status');
+
+    function showStatus(title, detail) {
+        status.innerHTML = '';
+        status.appendChild(document.createTextNode(title));
+        const small = document.createElement('small');
+        small.textContent = detail;
+        status.appendChild(small);
+    }
+
+    // Public entry points for a native Android WebView to send location updates.
+    window.setUserLocation = function (latitude, longitude, accuracy, follow) {
+        const lat = Number(latitude);
+        const lon = Number(longitude);
+        const radius = Number(accuracy) || 0;
+        if (!Number.isFinite(lat) || !Number.isFinite(lon) || Math.abs(lat) > 90 || Math.abs(lon) > 180) return;
+
+        const point = [lat, lon];
+        if (!marker) {
+            marker = L.marker(point, { icon: userIcon, keyboard: false }).addTo(map);
+        } else {
+            marker.setLatLng(point);
         }
-        function hideStatus() { status.hidden = true; }
-
-        if (!window.L) {
-            showStatus('Map library could not be loaded. Check your internet connection.');
-            return;
+        if (accuracyCircle) map.removeLayer(accuracyCircle);
+        if (radius > 0) {
+            accuracyCircle = L.circle(point, {
+                radius: radius,
+                color: '#58d6b2',
+                weight: 1,
+                opacity: .75,
+                fillColor: '#58d6b2',
+                fillOpacity: .12
+            }).addTo(map);
         }
+        hasLocation = true;
+        showStatus('Your location', radius > 0 ? 'Accuracy about ' + Math.round(radius) + ' m' : 'Location updated');
+        if (follow === true || !hasLocationBeforeUpdate) map.setView(point, Math.max(map.getZoom(), 15), { animate: true });
+        hasLocationBeforeUpdate = true;
+    };
+    window.updateLocation = window.setUserLocation;
+    window.updateUserLocation = window.setUserLocation;
+    let hasLocationBeforeUpdate = false;
 
-        map = L.map('map', {
-            zoomControl: false,
-            preferCanvas: true,
-            scrollWheelZoom: true,
-            tap: true
-        }).setView(defaultCenter, 2);
-
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-            subdomains: 'abcd',
-            maxZoom: 20,
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
-            crossOrigin: true
-        }).addTo(map);
-
-        L.control.zoom({ position: 'bottomright' }).addTo(map);
-        markersLayer = L.layerGroup().addTo(map);
-        userLayer = L.layerGroup().addTo(map);
-
-        const placeIcon = L.divIcon({
-            className: '',
-            html: '<div class="place-marker"></div>',
-            iconSize: [18, 18],
-            iconAnchor: [9, 9]
-        });
-        const userIcon = L.divIcon({
-            className: '',
-            html: '<div class="user-marker"></div>',
-            iconSize: [18, 18],
-            iconAnchor: [9, 9]
-        });
-
-        function validCoordinate(lat, lng) {
-            return Number.isFinite(lat) && Number.isFinite(lng) &&
-                lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180;
+    function centerOnLocation() {
+        if (hasLocation && marker) {
+            map.setView(marker.getLatLng(), Math.max(map.getZoom(), 15), { animate: true });
+        } else if (navigator.geolocation) {
+            showStatus('Finding your location', 'Waiting for a location update');
+            navigator.geolocation.getCurrentPosition(function (position) {
+                window.setUserLocation(position.coords.latitude, position.coords.longitude, position.coords.accuracy, true);
+            }, function () {
+                showStatus('Location unavailable', 'Allow location access to show your position');
+            }, { enableHighAccuracy: true, timeout: 12000, maximumAge: 10000 });
+        } else {
+            showStatus('Location unavailable', 'This device does not provide location access');
         }
-        function coordinates(item) {
-            if (!item || typeof item !== 'object') return null;
-            const nested = item.location || item.position || item.coordinates || item;
-            const lat = Number(nested.latitude ?? nested.lat);
-            const lng = Number(nested.longitude ?? nested.lng ?? nested.lon);
-            return validCoordinate(lat, lng) ? [lat, lng] : null;
-        }
-        function addPlace(item) {
-            const point = coordinates(item);
-            if (!point) return null;
-            const title = String(item.name ?? item.title ?? item.label ?? 'Place');
-            const detail = item.address ?? item.description ?? '';
-            const marker = L.marker(point, { icon: placeIcon, riseOnHover: true }).addTo(markersLayer);
-            const popup = document.createElement('div');
-            const heading = document.createElement('div');
-            heading.className = 'popup-title';
-            heading.textContent = title;
-            popup.appendChild(heading);
-            if (detail) {
-                const description = document.createElement('div');
-                description.className = 'popup-detail';
-                description.textContent = String(detail);
-                popup.appendChild(description);
-            }
-            marker.bindPopup(popup);
-            return marker;
-        }
-        function setUserLocation(location) {
-            userLayer.clearLayers();
-            const point = coordinates(location);
-            if (!point) return null;
-            const marker = L.marker(point, { icon: userIcon, zIndexOffset: 1000 })
-                .bindPopup('Your location')
-                .addTo(userLayer);
-            const accuracy = Number(location.accuracy);
-            if (Number.isFinite(accuracy) && accuracy > 0) {
-                L.circle(point, {
-                    radius: accuracy,
-                    color: '#36a8ff',
-                    weight: 1,
-                    opacity: .7,
-                    fillColor: '#36a8ff',
-                    fillOpacity: .12
-                }).addTo(userLayer);
-            }
-            return marker;
-        }
-        function listFrom(payload) {
-            if (Array.isArray(payload)) return payload;
-            if (!payload || typeof payload !== 'object') return [];
-            const list = payload.locations ?? payload.places ?? payload.markers ?? payload.items;
-            return Array.isArray(list) ? list : [];
-        }
+    }
 
-        // Public entry points for the Android WebView bridge.
-        window.updateMap = function (payload) {
-            markersLayer.clearLayers();
-            const places = listFrom(payload);
-            const bounds = [];
-            places.forEach(item => {
-                const marker = addPlace(item);
-                if (marker) bounds.push(marker.getLatLng());
-            });
+    document.getElementById('locate').addEventListener('click', centerOnLocation);
 
-            if (payload && !Array.isArray(payload)) {
-                const user = payload.userLocation ?? payload.currentLocation ?? payload.current_position;
-                if (user) {
-                    const marker = setUserLocation(user);
-                    if (marker) bounds.push(marker.getLatLng());
-                }
-            }
-
-            if (bounds.length === 1) map.setView(bounds[0], Math.max(map.getZoom(), 14), { animate: true });
-            else if (bounds.length > 1) map.fitBounds(L.latLngBounds(bounds), { padding: [36, 36], maxZoom: 16, animate: true });
-            if (places.length === 0 && bounds.length === 0) showStatus('No places to display yet');
-            else hideStatus();
-            map.invalidateSize({ pan: false });
-        };
-        window.setLocations = window.updateMap;
-        window.updateLocations = window.updateMap;
-        window.addMarker = function (item) {
-            const marker = addPlace(item);
-            if (marker) {
-                map.panTo(marker.getLatLng(), { animate: true });
-                hideStatus();
-            }
-        };
-        window.setCurrentLocation = function (lat, lng, accuracy) {
-            const location = typeof lat === 'object' ? lat : { latitude: lat, longitude: lng, accuracy };
-            const marker = setUserLocation(location);
-            if (marker) map.panTo(marker.getLatLng(), { animate: true });
-        };
-        window.clearMarkers = function () {
-            markersLayer.clearLayers();
-            userLayer.clearLayers();
-        };
-
-        map.on('tileerror', () => showStatus('Map tiles are unavailable. Check your internet connection.'));
-        map.on('load', hideStatus);
-        setTimeout(() => map.invalidateSize({ pan: false }), 150);
-        if (window.ResizeObserver) {
-            new ResizeObserver(() => map.invalidateSize({ pan: false })).observe(document.getElementById('map'));
-        }
-    })();
+    if (navigator.geolocation) {
+        navigator.geolocation.watchPosition(function (position) {
+            window.setUserLocation(position.coords.latitude, position.coords.longitude, position.coords.accuracy, false);
+        }, function () {
+            if (!hasLocation) showStatus('Map ready', 'Location access is unavailable');
+        }, { enableHighAccuracy: true, maximumAge: 10000, timeout: 20000 });
+    } else {
+        showStatus('Map ready', 'Location access is unavailable');
+    }
+})();
 </script>
 </body>
 </html>

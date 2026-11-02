@@ -1,5 +1,12 @@
-<?xml version="1.0" encoding="utf-8"?>
-<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
-    <background android:color="#FFFFFF" />
-    <foreground android:color="#007AFF" />
-</adaptive-icon>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="48"
+    android:viewportHeight="48">
+    <path
+        android:fillColor="#14232B"
+        android:pathData="M24,0A24,24 0,1 0,24 48A24,24 0,1 0,24 0" />
+    <path
+        android:fillColor="#72E0C1"
+        android:pathData="M24,7C16.82,7 11,12.82 11,20c0,9.75 13,21 13,21s13,-11.25 13,-21C37,12.82 31.18,7 24,7zM24,25a5,5 0,1 1,0 -10a5,5 0,0 1,0 10z" />
+</vector>
