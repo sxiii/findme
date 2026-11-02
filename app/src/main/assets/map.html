@@ -14,45 +14,45 @@
 <body>
     <div id="map"></div>
     <script>
-        const urlParams = new URLSearchParams(window.location.search);
-        const lat = parseFloat(urlParams.get('lat')) || 0.0;
-        const lon = parseFloat(urlParams.get('lon')) || 0.0;
-        const isDark = urlParams.get('dark') === 'true';
+        var map = null;
+        var marker = null;
+        var circle = null;
 
-        const bgColor = isDark ? "#1a1a1a" : "#ffffff";
-        document.body.style.backgroundColor = bgColor;
-        document.getElementById('map').style.backgroundColor = bgColor;
+        function initMap(lat, lon, isDark) {
+            try {
+                const bgColor = isDark ? "#1a1a1a" : "#ffffff";
+                document.body.style.backgroundColor = bgColor;
+                document.getElementById('map').style.backgroundColor = bgColor;
 
-        const map = L.map('map').setView([lat, lon], 14);
-        
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; OpenStreetMap contributors',
-            maxZoom: 19
-        }).addTo(map);
-        
-        const marker = L.marker([lat, lon]).addTo(map).bindPopup('Location: ' + lat + ', ' + lon).openPopup();
-        
-        const circle = L.circleMarker([lat, lon], {
-            radius: 100,
-            fillColor: '#0066ff',
-            color: '#0066ff',
-            weight: 2,
-            opacity: 0.3,
-            fillOpacity: 0.1
-        }).addTo(map);
+                if (!map) {
+                    map = L.map('map').setView([lat, lon], 15);
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                        attribution: '&copy; OpenStreetMap contributors',
+                        maxZoom: 19
+                    }).addTo(map);
 
-        function updateLocation(newLat, newLon) {
-            map.setView([newLat, newLon], 14);
-            marker.setLatLng([newLat, newLon]);
-            circle.setLatLng([newLat, newLon]);
-            setTimeout(function() {
-                map.invalidateSize();
-            }, 100);
+                    marker = L.marker([lat, lon]).addTo(map).bindPopup('Location: ' + lat + ', ' + lon);
+                    circle = L.circleMarker([lat, lon], {
+                        radius: 100,
+                        fillColor: '#0066ff',
+                        color: '#0066ff',
+                        weight: 2,
+                        opacity: 0.3,
+                        fillOpacity: 0.1
+                    }).addTo(map);
+                } else {
+                    map.setView([lat, lon], 15);
+                    marker.setLatLng([lat, lon]).setPopupContent('Location: ' + lat + ', ' + lon);
+                    circle.setLatLng([lat, lon]);
+                }
+
+                setTimeout(function() {
+                    map.invalidateSize();
+                }, 100);
+            } catch (e) {
+                console.error("MapInit Error: " + e.message);
+            }
         }
-
-        setTimeout(function() {
-            map.invalidateSize();
-        }, 200);
     </script>
 </body>
 </html>

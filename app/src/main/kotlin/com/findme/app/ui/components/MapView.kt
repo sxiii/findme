@@ -28,13 +28,24 @@ fun MapView(
 ) {
     val context = LocalContext.current
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    var webViewInstance by remember { mutableStateOf<WebView?>(null) }
+
+    LaunchedEffect(latitude, longitude, isDarkMode) {
+        webViewInstance?.evaluateJavascript("initMap($latitude, $longitude, $isDarkMode);", null)
+    }
 
     Box(modifier = modifier) {
         AndroidView(
             modifier = Modifier.fillMaxSize(),
             factory = { context ->
                 WebView(context).apply {
+                    webViewInstance = this
                     webViewClient = object : WebViewClient() {
+                        override fun onPageFinished(view: WebView?, url: String?) {
+                            super.onPageFinished(view, url)
+                            view?.evaluateJavascript("initMap($latitude, $longitude, $isDarkMode);", null)
+                        }
+
                         override fun onReceivedError(
                             view: WebView?,
                             request: WebResourceRequest?,
@@ -83,11 +94,12 @@ fun MapView(
                     settings.allowFileAccessFromFileURLs = true
                     settings.allowUniversalAccessFromFileURLs = true
                     
-                    loadUrl("file:///android_asset/map.html?lat=$latitude&lon=$longitude&dark=$isDarkMode")
+                    loadUrl("file:///android_asset/map.html")
                 }
             },
             update = { webView ->
-                webView.evaluateJavascript("if (typeof updateLocation === 'function') { updateLocation($latitude, $longitude); } else { window.location.href = 'file:///android_asset/map.html?lat=$latitude&lon=$longitude&dark=$isDarkMode'; }", null)
+                webViewInstance = webView
+                webView.evaluateJavascript("initMap($latitude, $longitude, $isDarkMode);", null)
             }
         )
 
