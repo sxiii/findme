@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
     <style>
@@ -17,13 +17,17 @@
         const urlParams = new URLSearchParams(window.location.search);
         const lat = parseFloat(urlParams.get('lat')) || 0.0;
         const lon = parseFloat(urlParams.get('lon')) || 0.0;
+        const isDark = urlParams.get('dark') === 'true';
+
+        const bgColor = isDark ? "#1a1a1a" : "#ffffff";
+        document.body.style.backgroundColor = bgColor;
+        document.getElementById('map').style.backgroundColor = bgColor;
 
         const map = L.map('map').setView([lat, lon], 14);
         
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-            attribution: '&copy; CARTO',
-            maxZoom: 19,
-            subdomains: 'abc'
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors',
+            maxZoom: 19
         }).addTo(map);
         
         const marker = L.marker([lat, lon]).addTo(map).bindPopup('Location: ' + lat + ', ' + lon).openPopup();
@@ -41,8 +45,14 @@
             map.setView([newLat, newLon], 14);
             marker.setLatLng([newLat, newLon]);
             circle.setLatLng([newLat, newLon]);
-            map.invalidateSize();
+            setTimeout(function() {
+                map.invalidateSize();
+            }, 100);
         }
+
+        setTimeout(function() {
+            map.invalidateSize();
+        }, 200);
     </script>
 </body>
 </html>

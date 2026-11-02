@@ -69,10 +69,8 @@ fun MapView(
                                 val msg = it.message()
                                 val line = it.lineNumber()
                                 val level = it.messageLevel()
-                                if (level == ConsoleMessage.MessageLevel.ERROR || msg.contains("Error", true) || msg.contains("JS_ERR", true) || msg.contains("TileError", true)) {
+                                if (level == ConsoleMessage.MessageLevel.ERROR || msg.contains("Error", true) || msg.contains("JS_ERR", true)) {
                                     errorMessage = "JS Error [L$line]: $msg"
-                                } else {
-                                    errorMessage = "JS Log [L$line]: $msg"
                                 }
                             }
                             return super.onConsoleMessage(consoleMessage)
@@ -85,13 +83,11 @@ fun MapView(
                     settings.allowFileAccessFromFileURLs = true
                     settings.allowUniversalAccessFromFileURLs = true
                     
-                    val htmlContent = generateMapHtml(latitude, longitude, isDarkMode)
-                    loadDataWithBaseURL("https://app.local", htmlContent, "text/html", "utf-8", null)
+                    loadUrl("file:///android_asset/map.html?lat=$latitude&lon=$longitude&dark=$isDarkMode")
                 }
             },
             update = { webView ->
-                val htmlContent = generateMapHtml(latitude, longitude, isDarkMode)
-                webView.loadDataWithBaseURL("https://app.local", htmlContent, "text/html", "utf-8", null)
+                webView.evaluateJavascript("if (typeof updateLocation === 'function') { updateLocation($latitude, $longitude); } else { window.location.href = 'file:///android_asset/map.html?lat=$latitude&lon=$longitude&dark=$isDarkMode'; }", null)
             }
         )
 
@@ -140,78 +136,4 @@ fun MapView(
             )
         }
     }
-}
-
-private fun generateMapHtml(latitude: Double, longitude: Double, isDarkMode: Boolean): String {
-    val bgColor = if (isDarkMode) "#1a1a1a" else "#ffffff"
-
-    return """
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <meta charset="utf-8" />
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <link rel="icon" href="data:,">
-            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
-            <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-            <style>
-                html, body { margin: 0; padding: 0; height: 100%; width: 100%; background-color: $bgColor; overflow: hidden; }
-                #map { width: 100%; height: 100%; min-height: 300px; background-color: $bgColor; }
-                .leaflet-container { background-color: $bgColor; width: 100%; height: 100%; }
-            </style>
-        </head>
-        <body>
-            <div id="map"></div>
-            <script>
-                window.onerror = function(msg, url, line, col, error) {
-                    console.error("JS_ERR: " + msg + " at " + (url || "inline") + ":" + line + ":" + col);
-                };
-                window.addEventListener('unhandledrejection', function(event) {
-                    console.error("JS_REJECTION: " + event.reason);
-                });
-                try {
-                    if (typeof L === 'undefined') {
-                        throw new Error("Leaflet (L) is not loaded (CDN blocked or offline)");
-                    }
-                    var mapElem = document.getElementById('map');
-                    console.log("Map container size: " + mapElem.offsetWidth + "x" + mapElem.offsetHeight);
-
-                    var map = L.map('map').setView([$latitude, $longitude], 14);
-                    
-                    var tileLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                        attribution: '&copy; OpenStreetMap contributors',
-                        maxZoom: 19
-                    });
-
-                    tileLayer.on('tileerror', function(error) {
-                        console.error("TileError: " + JSON.stringify(error));
-                    });
-
-                    tileLayer.addTo(map);
-                    
-                    L.marker([$latitude, $longitude])
-                        .addTo(map)
-                        .bindPopup('Location: $latitude, $longitude')
-                        .openPopup();
-                        
-                    L.circleMarker([$latitude, $longitude], {
-                        radius: 100,
-                        fillColor: '#0066ff',
-                        color: '#0066ff',
-                        weight: 2,
-                        opacity: 0.3,
-                        fillOpacity: 0.1
-                    }).addTo(map);
-
-                    setTimeout(function() {
-                        map.invalidateSize();
-                        console.log("Map size invalidated, final size: " + mapElem.offsetWidth + "x" + mapElem.offsetHeight);
-                    }, 300);
-                } catch (e) {
-                    console.error("Leaflet Exception: " + e.message + " (Stack: " + e.stack + ")");
-                }
-            </script>
-        </body>
-        </html>
-    """.trimIndent()
 }
