@@ -34,6 +34,7 @@ fun MapView(
             modifier = Modifier.fillMaxSize(),
             factory = { context ->
                 WebView(context).apply {
+                    setBackgroundColor(android.graphics.Color.parseColor("#121212"))
                     webViewClient = object : WebViewClient() {
                         override fun onReceivedError(
                             view: WebView?,
@@ -138,7 +139,7 @@ fun MapView(
 }
 
 private fun generateMapHtml(latitude: Double, longitude: Double, isDarkMode: Boolean): String {
-    val bgColor = if (isDarkMode) "#1a1a1a" else "#ffffff"
+    val bgColor = "#121212"
 
     return """
         <!DOCTYPE html>
@@ -149,9 +150,45 @@ private fun generateMapHtml(latitude: Double, longitude: Double, isDarkMode: Boo
             <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
             <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
             <style>
-                html, body { margin: 0; padding: 0; height: 300px; width: 100%; background-color: $bgColor; overflow: hidden; }
-                #map { width: 100%; height: 300px; background-color: $bgColor; }
-                .leaflet-container { background-color: $bgColor; width: 100%; height: 300px; }
+                html, body {
+                    margin: 0;
+                    padding: 0;
+                    height: 100%;
+                    width: 100%;
+                    background-color: $bgColor;
+                    overflow: hidden;
+                }
+                #map {
+                    width: 100%;
+                    height: 100%;
+                    background-color: $bgColor;
+                }
+                .leaflet-container {
+                    background-color: $bgColor;
+                    width: 100%;
+                    height: 100%;
+                }
+                .leaflet-bar a {
+                    background-color: #242424 !important;
+                    color: #e0e0e0 !important;
+                    border-bottom: 1px solid #383838 !important;
+                }
+                .leaflet-bar a:hover {
+                    background-color: #333333 !important;
+                    color: #ffffff !important;
+                }
+                .leaflet-popup-content-wrapper, .leaflet-popup-tip {
+                    background-color: #242424 !important;
+                    color: #e0e0e0 !important;
+                    box-shadow: 0 3px 14px rgba(0,0,0,0.8) !important;
+                }
+                .leaflet-control-attribution {
+                    background-color: rgba(18, 18, 18, 0.7) !important;
+                    color: #888888 !important;
+                }
+                .leaflet-control-attribution a {
+                    color: #aaaaaa !important;
+                }
             </style>
         </head>
         <body>
@@ -163,9 +200,10 @@ private fun generateMapHtml(latitude: Double, longitude: Double, isDarkMode: Boo
                 try {
                     var map = L.map('map').setView([$latitude, $longitude], 15);
                     
-                    var tileLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                        attribution: '&copy; OpenStreetMap',
-                        maxZoom: 19
+                    var tileLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+                        subdomains: 'abcd',
+                        maxZoom: 20
                     });
 
                     tileLayer.on('tileload', function() {
