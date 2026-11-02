@@ -38,7 +38,7 @@ jobs:
           packages: 'platforms;android-35 build-tools;35.0.0'
 
       - name: Build debug APK
-        run: ./gradlew assembleDebug --info --stacktrace --debug
+        run: ./gradlew assembleDebug --info --stacktrace
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
