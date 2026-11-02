@@ -9,10 +9,6 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
-import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
-import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
-import androidx.compose.foundation.lazy.staggeredgrid.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -265,147 +261,143 @@ fun LocationScreen(isDarkMode: Boolean) {
                 }
             }
             1 -> {
-                // GeoHack DB Tab - Masonry Tiled Grid
-                LazyVerticalStaggeredGrid(
-                    columns = StaggeredGridCells.Fixed(3),
+                // GeoHack DB Tab - Crash-Proof Masonry Tiled Grid with Fetch Button Requirement
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .weight(1f),
-                    contentPadding = PaddingValues(16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    verticalItemSpacing = 6.dp
+                        .weight(1f)
+                        .verticalScroll(rememberScrollState())
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    item(span = StaggeredGridItemSpan.FullLine) {
-                        Card(
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            Column(
-                                modifier = Modifier.padding(16.dp),
-                                verticalArrangement = Arrangement.spacedBy(12.dp)
+                            Text(
+                                "GeoHack DB Coordinate Query",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
-                                Text(
-                                    "GeoHack DB Coordinate Query",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    color = MaterialTheme.colorScheme.primary
+                                OutlinedTextField(
+                                    value = latInput,
+                                    onValueChange = { latInput = it },
+                                    label = { Text("Latitude") },
+                                    modifier = Modifier.weight(1f),
+                                    singleLine = true
                                 )
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                ) {
-                                    OutlinedTextField(
-                                        value = latInput,
-                                        onValueChange = { latInput = it },
-                                        label = { Text("Latitude") },
-                                        modifier = Modifier.weight(1f),
-                                        singleLine = true
-                                    )
-                                    OutlinedTextField(
-                                        value = lonInput,
-                                        onValueChange = { lonInput = it },
-                                        label = { Text("Longitude") },
-                                        modifier = Modifier.weight(1f),
-                                        singleLine = true
-                                    )
-                                }
-                                Button(
-                                    onClick = {
-                                        scope.launch {
-                                            isGeoHackLoading = true
-                                            geoHackError = null
-                                            try {
-                                                val lat = latInput.toDoubleOrNull() ?: throw IllegalArgumentException("Invalid latitude value")
-                                                val lon = lonInput.toDoubleOrNull() ?: throw IllegalArgumentException("Invalid longitude value")
-                                                geoHackProviders = GeoHackPageExtractor.extract(lat, lon)
-                                            } catch (e: Exception) {
-                                                geoHackError = e.message ?: "Failed to fetch GeoHack DB"
-                                            } finally {
-                                                isGeoHackLoading = false
-                                            }
+                                OutlinedTextField(
+                                    value = lonInput,
+                                    onValueChange = { lonInput = it },
+                                    label = { Text("Longitude") },
+                                    modifier = Modifier.weight(1f),
+                                    singleLine = true
+                                )
+                            }
+                            Button(
+                                onClick = {
+                                    scope.launch {
+                                        isGeoHackLoading = true
+                                        geoHackError = null
+                                        try {
+                                            val lat = latInput.toDoubleOrNull() ?: throw IllegalArgumentException("Invalid latitude value")
+                                            val lon = lonInput.toDoubleOrNull() ?: throw IllegalArgumentException("Invalid longitude value")
+                                            geoHackProviders = GeoHackPageExtractor.extract(lat, lon)
+                                        } catch (e: Exception) {
+                                            geoHackError = e.message ?: "Failed to fetch GeoHack DB"
+                                        } finally {
+                                            isGeoHackLoading = false
                                         }
-                                    },
-                                    modifier = Modifier.fillMaxWidth(),
-                                    enabled = !isGeoHackLoading
-                                ) {
-                                    Text(if (isGeoHackLoading) "Querying GeoHack DB..." else "Fetch GeoHack DB")
-                                }
-                                geoHackError?.let {
-                                    Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
-                                }
+                                    }
+                                },
+                                modifier = Modifier.fillMaxWidth(),
+                                enabled = !isGeoHackLoading
+                            ) {
+                                Text(if (isGeoHackLoading) "Querying GeoHack DB..." else "Fetch GeoHack DB")
+                            }
+                            geoHackError?.let {
+                                Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
                             }
                         }
-                    }
-
-                    item(span = StaggeredGridItemSpan.FullLine) {
-                        Text(
-                            "GeoHack DB (${geoHackProviders.size} Providers)",
-                            style = MaterialTheme.typography.titleSmall,
-                            color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
-                        )
                     }
 
                     if (geoHackProviders.isEmpty()) {
-                        item(span = StaggeredGridItemSpan.FullLine) {
-                            Card(
-                                modifier = Modifier.fillMaxWidth(),
-                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-                            ) {
-                                Box(modifier = Modifier.padding(24.dp).fillMaxWidth(), contentAlignment = Alignment.Center) {
-                                    Text(
-                                        "No GeoHack links loaded yet. Enter coordinates above and tap 'Fetch GeoHack DB'.",
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = MaterialTheme.colorScheme.outline
-                                    )
-                                }
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                        ) {
+                            Box(modifier = Modifier.padding(32.dp).fillMaxWidth(), contentAlignment = Alignment.Center) {
+                                Text(
+                                    "Tap 'Fetch GeoHack DB' above to load map links.",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.outline
+                                )
                             }
                         }
                     } else {
-                        items(geoHackProviders, key = { it.provider }) { provider ->
-                            Card(
-                                modifier = Modifier.fillMaxWidth(),
-                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f))
+                        Text(
+                            "GeoHack DB (${geoHackProviders.size} Providers)",
+                            style = MaterialTheme.typography.titleSmall,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+
+                        // Distribute providers into 3 masonry columns
+                        val col0 = mutableListOf<GeoHackProviderLinks>()
+                        val col1 = mutableListOf<GeoHackProviderLinks>()
+                        val col2 = mutableListOf<GeoHackProviderLinks>()
+                        val colHeights = intArrayOf(0, 0, 0)
+
+                        geoHackProviders.forEach { provider ->
+                            val weight = 1 + provider.map.size + provider.satellite.size + provider.other.size
+                            val minCol = colHeights.indices.minByOrNull { colHeights[it] } ?: 0
+                            colHeights[minCol] += weight
+                            when (minCol) {
+                                0 -> col0.add(provider)
+                                1 -> col1.add(provider)
+                                else -> col2.add(provider)
+                            }
+                        }
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            verticalAlignment = Alignment.Top
+                        ) {
+                            Column(
+                                modifier = Modifier.weight(1f),
+                                verticalArrangement = Arrangement.spacedBy(6.dp)
                             ) {
-                                Column(
-                                    modifier = Modifier.padding(6.dp),
-                                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                                ) {
-                                    Text(
-                                        text = provider.provider,
-                                        style = MaterialTheme.typography.labelMedium,
-                                        fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.primary,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis
-                                    )
-                                    val allLinks = provider.map + provider.satellite + provider.other
-                                    allLinks.forEach { link ->
-                                        OutlinedButton(
-                                            onClick = {
-                                                runCatching {
-                                                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(link.url))
-                                                    context.startActivity(intent)
-                                                }
-                                            },
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .height(30.dp),
-                                            contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp)
-                                        ) {
-                                            Text(
-                                                text = link.label,
-                                                style = MaterialTheme.typography.labelSmall,
-                                                fontSize = 10.sp,
-                                                maxLines = 1,
-                                                overflow = TextOverflow.Ellipsis
-                                            )
-                                        }
-                                    }
+                                col0.forEach { provider ->
+                                    ProviderCard(provider, context)
+                                }
+                            }
+                            Column(
+                                modifier = Modifier.weight(1f),
+                                verticalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                col1.forEach { provider ->
+                                    ProviderCard(provider, context)
+                                }
+                            }
+                            Column(
+                                modifier = Modifier.weight(1f),
+                                verticalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                col2.forEach { provider ->
+                                    ProviderCard(provider, context)
                                 }
                             }
                         }
                     }
+                    Spacer(modifier = Modifier.height(32.dp))
                 }
             }
         }
@@ -452,6 +444,52 @@ private fun fetchPlaceInfo(
             onResult(info, null)
         }.onFailure { error ->
             onResult(null, error.message ?: "Unknown error")
+        }
+    }
+}
+
+@Composable
+private fun ProviderCard(provider: GeoHackProviderLinks, context: Context) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f))
+    ) {
+        Column(
+            modifier = Modifier.padding(6.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Text(
+                text = provider.provider,
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            val allLinks = provider.map + provider.satellite + provider.other
+            allLinks.forEach { link ->
+                OutlinedButton(
+                    onClick = {
+                        runCatching {
+                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(link.url))
+                            context.startActivity(intent)
+                        }
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(30.dp),
+                    contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp)
+                ) {
+                    Text(
+                        text = link.label,
+                        style = MaterialTheme.typography.labelSmall,
+                        fontSize = 10.sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            }
         }
     }
 }

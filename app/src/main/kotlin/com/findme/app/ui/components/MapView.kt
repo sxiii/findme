@@ -168,6 +168,9 @@ private fun generateMapHtml(latitude: Double, longitude: Double, isDarkMode: Boo
                     width: 100%;
                     height: 300px;
                 }
+                .leaflet-tile-pane {
+                    filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%);
+                }
                 .leaflet-bar a {
                     background-color: #242424 !important;
                     color: #e0e0e0 !important;
@@ -200,10 +203,9 @@ private fun generateMapHtml(latitude: Double, longitude: Double, isDarkMode: Boo
                 try {
                     var map = L.map('map').setView([$latitude, $longitude], 15);
                     
-                    var tileLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png', {
-                        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-                        subdomains: 'abcd',
-                        maxZoom: 20
+                    var tileLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                        attribution: '&copy; OpenStreetMap contributors',
+                        maxZoom: 19
                     });
 
                     tileLayer.on('tileload', function() {
