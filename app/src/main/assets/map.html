@@ -1,58 +1,252 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <meta name="color-scheme" content="dark">
+    <title>Findme map</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <style>
-        html, body { margin: 0; padding: 0; height: 100%; width: 100%; background-color: #1a1a1a; }
-        #map { position: absolute; top: 0; bottom: 0; left: 0; right: 0; background-color: #1a1a1a; }
-        .leaflet-container { background-color: #1a1a1a; width: 100%; height: 100%; }
+        :root {
+            color-scheme: dark;
+            --map-bg: #10151d;
+            --panel-bg: rgba(20, 27, 38, .92);
+            --panel-border: rgba(255, 255, 255, .12);
+            --text: #e8eef8;
+            --muted: #aab6c8;
+            --accent: #78aaff;
+        }
+
+        * { box-sizing: border-box; }
+        html, body, #map { width: 100%; height: 100%; margin: 0; }
+        body { overflow: hidden; background: var(--map-bg); font-family: system-ui, sans-serif; }
+        #map { background: var(--map-bg); }
+
+        .map-status {
+            position: absolute;
+            z-index: 1000;
+            top: 12px;
+            left: 50%;
+            max-width: calc(100% - 32px);
+            transform: translateX(-50%);
+            padding: 8px 12px;
+            border: 1px solid var(--panel-border);
+            border-radius: 12px;
+            background: var(--panel-bg);
+            color: var(--muted);
+            font-size: 12px;
+            line-height: 1.35;
+            text-align: center;
+            box-shadow: 0 4px 18px rgba(0, 0, 0, .28);
+            pointer-events: none;
+            transition: opacity .2s ease;
+        }
+        .map-status[hidden] { display: none; }
+
+        .place-marker {
+            width: 18px;
+            height: 18px;
+            border: 3px solid #f4f8ff;
+            border-radius: 50%;
+            background: #6ea8ff;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, .65), 0 0 0 5px rgba(110, 168, 255, .22);
+        }
+        .user-marker {
+            width: 18px;
+            height: 18px;
+            border: 3px solid #fff;
+            border-radius: 50%;
+            background: #36a8ff;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, .7), 0 0 0 6px rgba(54, 168, 255, .25);
+        }
+
+        .leaflet-container { background: var(--map-bg); color: var(--text); font: inherit; }
+        .leaflet-control-zoom a,
+        .leaflet-control-attribution {
+            border-color: var(--panel-border) !important;
+            background: var(--panel-bg) !important;
+            color: var(--text) !important;
+            backdrop-filter: blur(8px);
+        }
+        .leaflet-control-zoom a:hover { background: #2b374a !important; }
+        .leaflet-control-attribution a { color: var(--accent) !important; }
+        .leaflet-popup-content-wrapper, .leaflet-popup-tip {
+            background: #202a39;
+            color: var(--text);
+            box-shadow: 0 5px 22px rgba(0, 0, 0, .45);
+        }
+        .leaflet-popup-content { margin: 12px 15px; }
+        .popup-title { margin: 0 0 4px; font-weight: 650; }
+        .popup-detail { color: var(--muted); font-size: 12px; }
+        .leaflet-control-attribution { font-size: 10px !important; }
+
+        @media (prefers-reduced-motion: reduce) {
+            .map-status { transition: none; }
+        }
     </style>
 </head>
 <body>
-    <div id="map"></div>
-    <script>
-        var map = null;
-        var marker = null;
-        var circle = null;
+<div id="map" role="application" aria-label="Dark map showing places"></div>
+<div id="map-status" class="map-status" role="status" aria-live="polite">Loading map…</div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+    (() => {
+        const status = document.getElementById('map-status');
+        const defaultCenter = [20, 0];
+        let markersLayer;
+        let userLayer;
+        let map;
 
-        function initMap(lat, lon, isDark) {
-            try {
-                const bgColor = isDark ? "#1a1a1a" : "#ffffff";
-                document.body.style.backgroundColor = bgColor;
-                document.getElementById('map').style.backgroundColor = bgColor;
-
-                if (!map) {
-                    map = L.map('map').setView([lat, lon], 15);
-                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                        attribution: '&copy; OpenStreetMap contributors',
-                        maxZoom: 19
-                    }).addTo(map);
-
-                    marker = L.marker([lat, lon]).addTo(map).bindPopup('Location: ' + lat + ', ' + lon);
-                    circle = L.circleMarker([lat, lon], {
-                        radius: 100,
-                        fillColor: '#0066ff',
-                        color: '#0066ff',
-                        weight: 2,
-                        opacity: 0.3,
-                        fillOpacity: 0.1
-                    }).addTo(map);
-                } else {
-                    map.setView([lat, lon], 15);
-                    marker.setLatLng([lat, lon]).setPopupContent('Location: ' + lat + ', ' + lon);
-                    circle.setLatLng([lat, lon]);
-                }
-
-                setTimeout(function() {
-                    map.invalidateSize();
-                }, 100);
-            } catch (e) {
-                console.error("MapInit Error: " + e.message);
-            }
+        function showStatus(message) {
+            status.textContent = message;
+            status.hidden = false;
         }
-    </script>
+        function hideStatus() { status.hidden = true; }
+
+        if (!window.L) {
+            showStatus('Map library could not be loaded. Check your internet connection.');
+            return;
+        }
+
+        map = L.map('map', {
+            zoomControl: false,
+            preferCanvas: true,
+            scrollWheelZoom: true,
+            tap: true
+        }).setView(defaultCenter, 2);
+
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            subdomains: 'abcd',
+            maxZoom: 20,
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+            crossOrigin: true
+        }).addTo(map);
+
+        L.control.zoom({ position: 'bottomright' }).addTo(map);
+        markersLayer = L.layerGroup().addTo(map);
+        userLayer = L.layerGroup().addTo(map);
+
+        const placeIcon = L.divIcon({
+            className: '',
+            html: '<div class="place-marker"></div>',
+            iconSize: [18, 18],
+            iconAnchor: [9, 9]
+        });
+        const userIcon = L.divIcon({
+            className: '',
+            html: '<div class="user-marker"></div>',
+            iconSize: [18, 18],
+            iconAnchor: [9, 9]
+        });
+
+        function validCoordinate(lat, lng) {
+            return Number.isFinite(lat) && Number.isFinite(lng) &&
+                lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180;
+        }
+        function coordinates(item) {
+            if (!item || typeof item !== 'object') return null;
+            const nested = item.location || item.position || item.coordinates || item;
+            const lat = Number(nested.latitude ?? nested.lat);
+            const lng = Number(nested.longitude ?? nested.lng ?? nested.lon);
+            return validCoordinate(lat, lng) ? [lat, lng] : null;
+        }
+        function addPlace(item) {
+            const point = coordinates(item);
+            if (!point) return null;
+            const title = String(item.name ?? item.title ?? item.label ?? 'Place');
+            const detail = item.address ?? item.description ?? '';
+            const marker = L.marker(point, { icon: placeIcon, riseOnHover: true }).addTo(markersLayer);
+            const popup = document.createElement('div');
+            const heading = document.createElement('div');
+            heading.className = 'popup-title';
+            heading.textContent = title;
+            popup.appendChild(heading);
+            if (detail) {
+                const description = document.createElement('div');
+                description.className = 'popup-detail';
+                description.textContent = String(detail);
+                popup.appendChild(description);
+            }
+            marker.bindPopup(popup);
+            return marker;
+        }
+        function setUserLocation(location) {
+            userLayer.clearLayers();
+            const point = coordinates(location);
+            if (!point) return null;
+            const marker = L.marker(point, { icon: userIcon, zIndexOffset: 1000 })
+                .bindPopup('Your location')
+                .addTo(userLayer);
+            const accuracy = Number(location.accuracy);
+            if (Number.isFinite(accuracy) && accuracy > 0) {
+                L.circle(point, {
+                    radius: accuracy,
+                    color: '#36a8ff',
+                    weight: 1,
+                    opacity: .7,
+                    fillColor: '#36a8ff',
+                    fillOpacity: .12
+                }).addTo(userLayer);
+            }
+            return marker;
+        }
+        function listFrom(payload) {
+            if (Array.isArray(payload)) return payload;
+            if (!payload || typeof payload !== 'object') return [];
+            const list = payload.locations ?? payload.places ?? payload.markers ?? payload.items;
+            return Array.isArray(list) ? list : [];
+        }
+
+        // Public entry points for the Android WebView bridge.
+        window.updateMap = function (payload) {
+            markersLayer.clearLayers();
+            const places = listFrom(payload);
+            const bounds = [];
+            places.forEach(item => {
+                const marker = addPlace(item);
+                if (marker) bounds.push(marker.getLatLng());
+            });
+
+            if (payload && !Array.isArray(payload)) {
+                const user = payload.userLocation ?? payload.currentLocation ?? payload.current_position;
+                if (user) {
+                    const marker = setUserLocation(user);
+                    if (marker) bounds.push(marker.getLatLng());
+                }
+            }
+
+            if (bounds.length === 1) map.setView(bounds[0], Math.max(map.getZoom(), 14), { animate: true });
+            else if (bounds.length > 1) map.fitBounds(L.latLngBounds(bounds), { padding: [36, 36], maxZoom: 16, animate: true });
+            if (places.length === 0 && bounds.length === 0) showStatus('No places to display yet');
+            else hideStatus();
+            map.invalidateSize({ pan: false });
+        };
+        window.setLocations = window.updateMap;
+        window.updateLocations = window.updateMap;
+        window.addMarker = function (item) {
+            const marker = addPlace(item);
+            if (marker) {
+                map.panTo(marker.getLatLng(), { animate: true });
+                hideStatus();
+            }
+        };
+        window.setCurrentLocation = function (lat, lng, accuracy) {
+            const location = typeof lat === 'object' ? lat : { latitude: lat, longitude: lng, accuracy };
+            const marker = setUserLocation(location);
+            if (marker) map.panTo(marker.getLatLng(), { animate: true });
+        };
+        window.clearMarkers = function () {
+            markersLayer.clearLayers();
+            userLayer.clearLayers();
+        };
+
+        map.on('tileerror', () => showStatus('Map tiles are unavailable. Check your internet connection.'));
+        map.on('load', hideStatus);
+        setTimeout(() => map.invalidateSize({ pan: false }), 150);
+        if (window.ResizeObserver) {
+            new ResizeObserver(() => map.invalidateSize({ pan: false })).observe(document.getElementById('map'));
+        }
+    })();
+</script>
 </body>
 </html>
