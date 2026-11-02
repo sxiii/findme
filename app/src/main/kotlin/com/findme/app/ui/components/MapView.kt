@@ -28,24 +28,13 @@ fun MapView(
 ) {
     val context = LocalContext.current
     var errorMessage by remember { mutableStateOf<String?>(null) }
-    var webViewInstance by remember { mutableStateOf<WebView?>(null) }
-
-    LaunchedEffect(latitude, longitude, isDarkMode) {
-        webViewInstance?.evaluateJavascript("initMap($latitude, $longitude, $isDarkMode);", null)
-    }
 
     Box(modifier = modifier) {
         AndroidView(
             modifier = Modifier.fillMaxSize(),
             factory = { context ->
                 WebView(context).apply {
-                    webViewInstance = this
                     webViewClient = object : WebViewClient() {
-                        override fun onPageFinished(view: WebView?, url: String?) {
-                            super.onPageFinished(view, url)
-                            view?.evaluateJavascript("initMap($latitude, $longitude, $isDarkMode);", null)
-                        }
-
                         override fun onReceivedError(
                             view: WebView?,
                             request: WebResourceRequest?,
@@ -90,16 +79,14 @@ fun MapView(
                     settings.javaScriptEnabled = true
                     settings.domStorageEnabled = true
                     settings.mixedContentMode = android.webkit.WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
-                    settings.allowFileAccess = true
-                    settings.allowFileAccessFromFileURLs = true
-                    settings.allowUniversalAccessFromFileURLs = true
                     
-                    loadUrl("file:///android_asset/map.html")
+                    val htmlContent = generateMapHtml(latitude, longitude, isDarkMode)
+                    loadDataWithBaseURL("https://app.local", htmlContent, "text/html", "utf-8", null)
                 }
             },
             update = { webView ->
-                webViewInstance = webView
-                webView.evaluateJavascript("initMap($latitude, $longitude, $isDarkMode);", null)
+                val htmlContent = generateMapHtml(latitude, longitude, isDarkMode)
+                webView.loadDataWithBaseURL("https://app.local", htmlContent, "text/html", "utf-8", null)
             }
         )
 
@@ -148,4 +135,58 @@ fun MapView(
             )
         }
     }
+}
+
+private fun generateMapHtml(latitude: Double, longitude: Double, isDarkMode: Boolean): String {
+    val bgColor = if (isDarkMode) "#1a1a1a" else "#ffffff"
+
+    return """
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="utf-8" />
+            <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+            <style>
+                html, body { margin: 0; padding: 0; height: 100%; width: 100%; background-color: $bgColor; overflow: hidden; }
+                #map { width: 100%; height: 100%; background-color: $bgColor; }
+                .leaflet-container { background-color: $bgColor; width: 100%; height: 100%; }
+            </style>
+        </head>
+        <body>
+            <div id="map"></div>
+            <script>
+                window.onerror = function(msg, url, line, col, error) {
+                    console.error("JS_ERR: " + msg + " at " + (url || "inline") + ":" + line + ":" + col);
+                };
+                try {
+                    var map = L.map('map').setView([$latitude, $longitude], 15);
+                    
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                        attribution: '&copy; OpenStreetMap contributors',
+                        maxZoom: 19
+                    }).addTo(map);
+                    
+                    L.marker([$latitude, $longitude]).addTo(map).bindPopup('Location: $latitude, $longitude').openPopup();
+                    
+                    L.circleMarker([$latitude, $longitude], {
+                        radius: 100,
+                        fillColor: '#0066ff',
+                        color: '#0066ff',
+                        weight: 2,
+                        opacity: 0.3,
+                        fillOpacity: 0.1
+                    }).addTo(map);
+
+                    setTimeout(function() {
+                        map.invalidateSize();
+                    }, 250);
+                } catch (e) {
+                    console.error("Leaflet Init Exception: " + e.message);
+                }
+            </script>
+        </body>
+        </html>
+    """.trimIndent()
 }
