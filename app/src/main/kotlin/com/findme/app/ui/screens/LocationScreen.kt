@@ -7,6 +7,7 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -17,7 +18,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import com.findme.app.data.GeoHackPageExtractor
 import com.findme.app.data.GeoHackProviderLinks
@@ -343,28 +347,35 @@ fun LocationScreen(isDarkMode: Boolean) {
                             }
                         }
                     } else {
-                        geoHackProviders.forEach { provider ->
-                            Card(
-                                modifier = Modifier.fillMaxWidth(),
-                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-                            ) {
-                                Column(
-                                    modifier = Modifier.padding(12.dp),
-                                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            geoHackProviders.chunked(3).forEach { rowProviders ->
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
                                 ) {
-                                    Text(
-                                        provider.provider,
-                                        style = MaterialTheme.typography.titleMedium,
-                                        color = MaterialTheme.colorScheme.primary
-                                    )
-                                    val allLinks = provider.map + provider.satellite + provider.other
-                                    if (allLinks.isNotEmpty()) {
-                                        allLinks.chunked(2).forEach { rowLinks ->
-                                            Row(
-                                                modifier = Modifier.fillMaxWidth(),
-                                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    rowProviders.forEach { provider ->
+                                        Card(
+                                            modifier = Modifier.weight(1f),
+                                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f))
+                                        ) {
+                                            Column(
+                                                modifier = Modifier.padding(6.dp),
+                                                verticalArrangement = Arrangement.spacedBy(4.dp)
                                             ) {
-                                                rowLinks.forEach { link ->
+                                                Text(
+                                                    text = provider.provider,
+                                                    style = MaterialTheme.typography.labelMedium,
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = MaterialTheme.colorScheme.primary,
+                                                    maxLines = 1,
+                                                    overflow = TextOverflow.Ellipsis
+                                                )
+                                                val allLinks = provider.map + provider.satellite + provider.other
+                                                allLinks.forEach { link ->
                                                     OutlinedButton(
                                                         onClick = {
                                                             runCatching {
@@ -372,22 +383,25 @@ fun LocationScreen(isDarkMode: Boolean) {
                                                                 context.startActivity(intent)
                                                             }
                                                         },
-                                                        modifier = Modifier.weight(1f).height(36.dp),
-                                                        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 2.dp)
+                                                        modifier = Modifier
+                                                            .fillMaxWidth()
+                                                            .height(30.dp),
+                                                        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp)
                                                     ) {
                                                         Text(
-                                                            link.label,
-                                                            style = MaterialTheme.typography.bodySmall,
+                                                            text = link.label,
+                                                            style = MaterialTheme.typography.labelSmall,
+                                                            fontSize = 10.sp,
                                                             maxLines = 1,
-                                                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                                                            overflow = TextOverflow.Ellipsis
                                                         )
                                                     }
                                                 }
-                                                if (rowLinks.size == 1) {
-                                                    Spacer(modifier = Modifier.weight(1f))
-                                                }
                                             }
                                         }
+                                    }
+                                    repeat(3 - rowProviders.size) {
+                                        Spacer(modifier = Modifier.weight(1f))
                                     }
                                 }
                             }
